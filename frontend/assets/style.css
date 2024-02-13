@@ -1,0 +1,92 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f9f1; /* first-color */
+}
+
+.header {
+    background-color: #5c715e; /* fourth-color */
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+
+.button {
+    background-color: #b6cdbd; /* third-color */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #5c715e; /* fourth-color */
+}
+
+.button-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.schedule-table {
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #ddeedf; /* second-color */
+}
+
+.schedule-table td, .schedule-table th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.schedule-table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #5c715e; /* fourth-color */
+    color: white;
+}
+
+.link {
+    display: block;
+    margin-top: 20px;
+    text-align: center;
+    color: #5c715e; /* fourth-color */
+    text-decoration: none;
+}
+
+.link:hover {
+    color: #b6cdbd; /* third-color */
+}
+
+.schedule-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.day-schedule {
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f4f4f4; /* Light grey background */
+    width: 30%;
+}
+
+.day-title {
+    color: #5c715e; /* Highlight color for day titles */
+}
+
+.dropdown {
+    margin-bottom: 10px;
+}
+
+.output-state {
+    text-align: center;
+    margin-top: 20px;
+}
