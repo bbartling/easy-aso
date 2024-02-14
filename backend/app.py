@@ -1,68 +1,302 @@
-from aiohttp import web
-from datetime import datetime
-import json
+from __future__ import annotations
 
-class ScheduleManager:
-    def __init__(self, schedule_file):
-        self.schedule_file = schedule_file
-        self.schedule = {}
-        self.load_from_file()
+import asyncio
+import argparse
+import uvicorn
+from contextlib import asynccontextmanager
+from typing import Optional
 
-    def save_to_file(self):
-        with open(self.schedule_file, 'w') as f:
-            json.dump(self.schedule, f)
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import RedirectResponse
 
-    def load_from_file(self):
-        try:
-            with open(self.schedule_file, 'r') as f:
-                self.schedule = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            self.schedule = {}
+from bacpypes3.debugging import ModuleLogger
+from bacpypes3.argparse import SimpleArgumentParser
 
-    def update_schedule(self, data):
-        self.schedule = data
-        self.save_to_file()
-        return "Schedule saved!"
+from bacpypes3.pdu import Address, GlobalBroadcast
+from bacpypes3.primitivedata import Atomic, ObjectIdentifier
+from bacpypes3.constructeddata import Sequence, AnyAtomic, Array, List
+from bacpypes3.apdu import ErrorRejectAbortNack
+from bacpypes3.app import Application
 
-    def check_run(self):
-        now = datetime.now()
-        weekday = now.weekday()
-        hour = now.hour
-        minute_block = now.minute // 15
+# for serializing the configuration
+from bacpypes3.settings import settings
+from bacpypes3.json.util import (
+    atomic_encode,
+    sequence_to_json,
+    extendedlist_to_json_list,
+)
 
-        if str(weekday) in self.schedule and [hour, minute_block] in self.schedule[str(weekday)]:
-            return {'run': True}
+from bacpypes3.debugging import ModuleLogger
+from bacpypes3.argparse import SimpleArgumentParser
+from bacpypes3.app import Application
+from bacpypes3.local.analog import AnalogValueObject
+from bacpypes3.local.binary import BinaryValueObject
+from bacpypes3.local.cmd import Commandable
+
+# Create a FastAPI instance
+app = FastAPI()
+
+# Set up logging
+_debug = 0
+_log = ModuleLogger(globals())
+
+INTERVAL = 1.0
+
+class CommandableAnalogValueObject(Commandable, AnalogValueObject):
+    """
+    Commandable Analog Value Object
+    """
+
+class FreeBasApplication:
+    def __init__(self, args, test_bv, test_av, commandable_analog_value):
+        # embed an application
+        self.bacnet_app = Application.from_args(args)
+
+        # extract the kwargs that are special to this application
+        self.test_bv = test_bv
+        self.bacnet_app.add_object(test_bv)
+
+        self.test_av = test_av
+        self.bacnet_app.add_object(test_av)
+
+        self.commandable_analog_value = commandable_analog_value
+        self.bacnet_app.add_object(commandable_analog_value)
+        
+        self.web_app = FastAPI()
+
+        # Setup FastAPI routes
+        self.setup_routes()
+
+        # create a task to update the values
+        asyncio.create_task(self.update_values())
+
+    async def update_values(self):
+        test_values = [
+            ("active", 1.0),
+            ("inactive", 2.0),
+            ("active", 3.0),
+            ("inactive", 4.0),
+        ]
+
+        while True:
+            await asyncio.sleep(INTERVAL)
+            next_value = test_values.pop(0)
+            test_values.append(next_value)
+            if _debug:
+                _log.debug("    - next_value: %r", next_value)
+                _log.debug(
+                    "commandable_analog_value: %r",
+                    self.commandable_analog_value.presentValue,
+                )
+
+            self.test_av.presentValue = next_value[1]
+            self.test_bv.presentValue = next_value[0]
+            
+
+    async def _read_property(
+        self,
+        device_instance: int, 
+        object_identifier: str, 
+        property_identifier: str
+    ):
+        """
+        Read a property from an object.
+        """
+        _log.debug("_read_property %r %r", device_instance, object_identifier)
+
+        device_address: Address
+        device_info = self.bacnet_app.device_info_cache.instance_cache.get(device_instance, None)
+        if device_info:
+            device_address = device_info.device_address
+            _log.debug("    - cached address: %r", device_address)
         else:
-            return {'run': False}
+            # returns a list, there should be only one
+            i_ams = await self.bacnet_app.who_is(device_instance, device_instance)
+            if not i_ams:
+                raise HTTPException(
+                    status_code=400, detail=f"device not found: {device_instance}"
+                )
+            if len(i_ams) > 1:
+                raise HTTPException(
+                    status_code=400, detail=f"multiple devices: {device_instance}"
+                )
 
-    def get_schedule(self):
-        return json.loads(self.schedule)
+            device_address = i_ams[0].pduSource
+            _log.debug("    - i-am response: %r", device_address)
 
-async def handle_update_schedule(request):
-    try:
-        data = await request.json()
-        message = schedule_manager.update_schedule(data)
-        return web.Response(status=200, text=message)
-    except Exception as e:
-        return web.Response(status=500, text=str(e))
+        try:
+            property_value = await self.bacnet_app.read_property(
+                device_address, ObjectIdentifier(object_identifier), property_identifier
+            )
+            if _debug:
+                _log.debug("    - property_value: %r", property_value)
+        except ErrorRejectAbortNack as err:
+            if _debug:
+                _log.debug("    - exception: %r", err)
+            raise HTTPException(status_code=400, detail=f"error/reject/abort: {err}")
 
-async def handle_check_run(request):
-    result = schedule_manager.check_run()
-    return web.json_response(result)
+        if isinstance(property_value, AnyAtomic):
+            if _debug:
+                _log.debug("    - schedule objects")
+            property_value = property_value.get_value()
 
-async def handle_get_schedule(request):
-    schedule = schedule_manager.get_schedule()
-    print("schedule: \n", schedule)
-    print("schedule: \n", type(schedule))
-    return web.json_response(schedule, dumps=json.dumps)
+        if isinstance(property_value, Atomic):
+            encoded_value = atomic_encode(property_value)
+        elif isinstance(property_value, Sequence):
+            encoded_value = sequence_to_json(property_value)
+        elif isinstance(property_value, (Array, List)):
+            encoded_value = extendedlist_to_json_list(property_value)
+        else:
+            raise HTTPException(status_code=400, detail=f"JSON encoding: {property_value}")
+        if _debug:
+            _log.debug("    - encoded_value: %r", encoded_value)
+
+        return {property_identifier: encoded_value}
+        
+        
+    async def start_server(self, host="0.0.0.0", port=8000, log_level="info"):
+        config = uvicorn.Config(self.web_app, host=host, port=port, log_level=log_level)
+        server = uvicorn.Server(config)
+        await server.serve()
+
+    def setup_routes(self):
+        # Define FastAPI routes here
+        @self.web_app.get("/")
+        
+        async def hello_world():
+            # You can access class attributes here
+            return {"message": "Hello World"}
+
+
+        @self.web_app.get("/config")
+        async def config():
+            """
+            Return the configuration as JSON.
+            """
+            _log.debug("config")
+
+            object_list = []
+            for obj in self.bacnet_app.objectIdentifier.values():
+                _log.debug("    - obj: %r", obj)
+                object_list.append(sequence_to_json(obj))
+
+            return {"BACpypes": dict(settings), "application": object_list}
+
+
+        @self.web_app.get("/{device_instance}")
+        async def who_is(device_instance: int, address: Optional[str] = None):
+            """
+            Send out a Who-Is request and return the I-Am messages.
+            """
+            _log.debug("who_is %r address=%r", device_instance, address)
+
+            # if the address is None in the who_is() call it defaults to a global
+            # broadcast but it's nicer to be explicit here
+            destination: Address
+            if address:
+                destination = Address(address)
+            else:
+                destination = GlobalBroadcast()
+            if _debug:
+                _log.debug("    - destination: %r", destination)
+
+            # returns a list, there should be only one
+            i_ams = await self.bacnet_app.who_is(device_instance, device_instance, destination)
+
+            result = []
+            for i_am in i_ams:
+                if _debug:
+                    _log.debug("    - i_am: %r", i_am)
+                result.append(sequence_to_json(i_am))
+
+            return result
+
+
+        @self.web_app.get("/{device_instance}/{object_identifier}")
+        async def read_present_value(device_instance: int, object_identifier: str):
+            """
+            Read the `present-value` property from an object.
+            """
+            _log.debug("read_present_value %r %r", device_instance, object_identifier)
+
+            return await self._read_property(device_instance, object_identifier, "present-value")
+
+
+        @self.web_app.get("/{device_instance}/{object_identifier}/{property_identifier}")
+        async def read_property(
+            device_instance: int, object_identifier: str, property_identifier: str
+        ):
+            """
+            Read a property from an object.
+            """
+            _log.debug("read_present_value %r %r", device_instance, object_identifier)
+
+            return await self._read_property(device_instance, object_identifier, property_identifier)
+
+
+async def main():
+
+    parser = SimpleArgumentParser()
+    parser.add_argument(
+        "--host",
+        help="host address for service",
+        default="0.0.0.0",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        help="host address for service",
+        default=8000,
+    )
+    parser.add_argument(
+        "--log-level",
+        help="logging level",
+        default="info",
+    )
+    args = parser.parse_args()
+    
+    if _debug:
+        _log.debug("args: %r", args)
+
+    # define BACnet objects
+    test_av = AnalogValueObject(
+        objectIdentifier=("analogValue", 1),
+        objectName="av",
+        presentValue=0.0,
+        statusFlags=[0, 0, 0, 0],
+        covIncrement=1.0,
+    )
+    _log.debug("    - test_av: %r", test_av)
+
+    test_bv = BinaryValueObject(
+        objectIdentifier=("binaryValue", 1),
+        objectName="bv",
+        presentValue="inactive",
+        statusFlags=[0, 0, 0, 0],
+    )
+    _log.debug("    - test_bv: %r", test_bv)
+
+    # Create an instance of your commandable object
+    commandable_analog_value = CommandableAnalogValueObject(
+        objectIdentifier=("analogValue", 3),
+        objectName="commandable-av",
+        presentValue=-1.0,
+        statusFlags=[0, 0, 0, 0],
+        covIncrement=1.0,
+        description="Commandable analog value object",
+    )
+
+    # Instantiate the FreeBasApplication with BACnet objects
+    sample_app = FreeBasApplication(
+        args,
+        test_av=test_av,
+        test_bv=test_bv,
+        commandable_analog_value=commandable_analog_value,
+    )
+
+    # Start the web server
+    await sample_app.start_server(args.host, args.port, args.log_level)
 
 if __name__ == "__main__":
-    SCHEDULE_FILE = "schedule.json"
-    schedule_manager = ScheduleManager(SCHEDULE_FILE)
+    asyncio.run(main())
 
-    app = web.Application()
-    app.router.add_post('/update_schedule', handle_update_schedule)
-    app.router.add_get('/check_run', handle_check_run)
-    app.router.add_get('/get_schedule', handle_get_schedule)
-
-    web.run_app(app)
