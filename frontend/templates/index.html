@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Building Automation Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1 class="center-text">Welcome to the Building Automation System Dashboard</h1>
+
+    <div class="dashboard-container center-text">
+        <h2>Central Plant Temperatures</h2>
+        <p>Heating Plant Temperature: 75°F</p>
+        <p>Cooling Plant Temperature: 65°F</p>
+
+        <h2>Air Handling Units</h2>
+        <p>AHU1 Motor Status: Running</p>
+        <p>AHU2 Motor Status: Off</p>
+
+        <h2>Temperature Sensors</h2>
+        <p>AHU Leaving Air Temperature: 68°F</p>
+        <p>Outside Air Temperature: 55°F</p>
+    </div>
+
+    <a href="/login" class="link center-text">Login</a>
+    <a href="/schedule" class="link center-text">View Schedule</a>
+</body>
+</html>

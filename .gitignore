@@ -6,6 +6,21 @@ __pycache__/
 # C extensions
 *.so
 
+.venv/
+
+*.pyc
+__pycache__/
+
+instance/
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+dist/
+build/
+*.egg-info/
+
 # Distribution / packaging
 .Python
 build/

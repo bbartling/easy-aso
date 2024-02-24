@@ -10,6 +10,16 @@ body {
     text-align: center;
 }
 
+.chart-container {
+    width: 80%;
+    margin: auto;
+    height: 400px; /* Adjust height as needed */
+}
+
+.center-text {
+    text-align: center;
+}
+
 .button {
     background-color: #b6cdbd; /* third-color */
     color: white;
