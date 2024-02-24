@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Building Automation Dashboard</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
     <h1 class="center-text">Welcome to the Building Automation System Dashboard</h1>
 
@@ -21,7 +23,19 @@
         <p>Outside Air Temperature: 55°F</p>
     </div>
 
-    <a href="/login" class="link center-text">Login</a>
-    <a href="/schedule" class="link center-text">View Schedule</a>
+    {% if user_logged_in %}
+    <div class="center-text">
+        <a href="/schedule" class="link">View Schedule</a>
+        <a href="/manage-schedule" class="link">Manage Schedule</a>
+        <!-- Content displayed only when user is logged in -->
+        <p>Welcome, you are currently logged in.</p>
+    </div>
+    {% else %}
+    <div class="center-text">
+        <a href="/login" class="link">Login</a>
+    </div>
+    {% endif %}
+    
 </body>
+
 </html>

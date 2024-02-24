@@ -1,14 +1,15 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #f2f9f1; /* first-color */
+    background-color: white; /* Change background color to white */
 }
 
 .header {
     background-color: #5c715e; /* fourth-color */
     color: white;
     padding: 10px;
-    text-align: center;
+    text-align: center; /* Center the text */
 }
+
 
 .chart-container {
     width: 80%;
@@ -55,10 +56,12 @@ body {
 .schedule-table th {
     padding-top: 12px;
     padding-bottom: 12px;
-    text-align: left;
+    text-align: center; /* Center the text */
     background-color: #5c715e; /* fourth-color */
     color: white;
 }
+
+
 
 .link {
     display: block;

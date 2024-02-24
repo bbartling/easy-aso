@@ -2,16 +2,23 @@
 <html>
 <head>
     <title>Login</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <h1 class="header">Login</h1>
-    <form method="post" action="/login">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username"><br><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password"><br><br>
-        <input type="submit" value="Login" class="button">
+    <form class="form-container" method="post" action="/login">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" class="input-field">
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" class="input-field">
+        </div>
+        <div>
+            <input type="submit" value="Login" class="button">
+        </div>
     </form>
+    <a href="/" class="link">Back to Home</a>
 </body>
 </html>

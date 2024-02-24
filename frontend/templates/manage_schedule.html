@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Manage Schedule</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
     <h1 class="header">Weekly Schedule Manager</h1>
     <form method="post" action="/manage-schedule">
@@ -12,23 +14,23 @@
             <div class="weekdays">
                 <h2 class="section-title">Weekdays</h2>
                 {% for day in days_of_week[1:6] %} <!-- Loop through Monday to Friday -->
-                    <div class="day-schedule">
-                        <h3 class="day-title">{{ day }}</h3>
-                        <select name="{{ day }}-start-time" class="dropdown">
-                            {% for time in time_slots %}
-                                <option value="{{ time }}" {% if schedule[day].start == time %} selected {% endif %}>
-                                    {{ time }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <select name="{{ day }}-end-time" class="dropdown">
-                            {% for time in time_slots %}
-                                <option value="{{ time }}" {% if schedule[day].end == time %} selected {% endif %}>
-                                    {{ time }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <div class="day-schedule">
+                    <h3 class="day-title">{{ day }}</h3>
+                    <select name="{{ day }}-start-time" class="dropdown">
+                        {% for time in time_slots %}
+                        <option value="{{ time }}" {% if schedule[day].start==time %} selected {% endif %}>
+                            {{ time }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <select name="{{ day }}-end-time" class="dropdown">
+                        {% for time in time_slots %}
+                        <option value="{{ time }}" {% if schedule[day].end==time %} selected {% endif %}>
+                            {{ time }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
                 {% endfor %}
             </div>
 
@@ -36,23 +38,23 @@
             <div class="weekends">
                 <h2 class="section-title">Weekends</h2>
                 {% for day in [days_of_week[0], days_of_week[6]] %} <!-- Loop through Sunday and Saturday -->
-                    <div class="day-schedule">
-                        <h3 class="day-title">{{ day }}</h3>
-                        <select name="{{ day }}-start-time" class="dropdown">
-                            {% for time in time_slots %}
-                                <option value="{{ time }}" {% if schedule[day].start == time %} selected {% endif %}>
-                                    {{ time }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <select name="{{ day }}-end-time" class="dropdown">
-                            {% for time in time_slots %}
-                                <option value="{{ time }}" {% if schedule[day].end == time %} selected {% endif %}>
-                                    {{ time }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <div class="day-schedule">
+                    <h3 class="day-title">{{ day }}</h3>
+                    <select name="{{ day }}-start-time" class="dropdown">
+                        {% for time in time_slots %}
+                        <option value="{{ time }}" {% if schedule[day].start==time %} selected {% endif %}>
+                            {{ time }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <select name="{{ day }}-end-time" class="dropdown">
+                        {% for time in time_slots %}
+                        <option value="{{ time }}" {% if schedule[day].end==time %} selected {% endif %}>
+                            {{ time }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
                 {% endfor %}
             </div>
         </div>
@@ -62,4 +64,5 @@
     </form>
     <a href="/" class="link">Back to Home</a>
 </body>
+
 </html>

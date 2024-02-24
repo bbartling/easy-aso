@@ -1,22 +1,27 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Schedule</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
-    <h1 class="center-text">Current Schedule</h1>
-    <div class="schedule-table">
-        {% if schedule %}
+    <div class="center-container">
+        <h1 class="header">Current Schedule</h1>
+        <div class="schedule-table">
+            {% if schedule %}
             <!-- Display schedule data -->
             {% for day, times in schedule.items() %}
-                <p>{{ day }}: Start - {{ times.start | default('Not set') }}, End - {{ times.end | default('Not set') }}</p>
+            <p>{{ day }}: Start - {{ times.start | default('Not set') }}, End - {{ times.end | default('Not set') }}</p>
             {% endfor %}
-        {% else %}
+            {% else %}
             <!-- Display message if schedule is empty or API call fails -->
             <p>No schedule data available. Please check back later or contact the administrator.</p>
-        {% endif %}
+            {% endif %}
+        </div>
+        <a href="/" class="link">Back to Home</a>
     </div>
-    <a href="/" class="link">Back to Home</a>
 </body>
+
 </html>
