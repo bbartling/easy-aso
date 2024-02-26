@@ -6,9 +6,10 @@ from pydantic import BaseModel
 from typing import Optional
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
+import json
 
 
-# uvicorn main:app --host 0.0.0.0
+# $ uvicorn main:app --host 0.0.0.
 
 # Define days of the week and time slots
 days_of_week = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -25,6 +26,8 @@ app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="your-secret-key")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Global variable to store the schedule in memory
+in_memory_schedule = None
 
 # Dummy user data - replace with a real database in production
 users = {"admin": {"username": "admin", "password": "admin"}}
@@ -49,6 +52,19 @@ def get_current_active_user(request: Request):
         raise HTTPException(status_code=401, detail="Unauthorized")
     return User(username=username)
 
+def load_schedule():
+    """Load the schedule from the JSON file into the cache."""
+    try:
+        with open("schedule.json", "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return default_schedule  # Or return an empty dict
+
+# Load the schedule at the start of the application
+# Register the function to run at startup
+in_memory_schedule = load_schedule()
+print(" schedule loaded success")
+
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
     user_logged_in = 'user' in request.session and request.session['user'] in users
@@ -61,6 +77,11 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     if not user_dict or user_dict['password'] != form_data.password:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     return {"access_token": form_data.username, "token_type": "bearer"}
+
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.pop('user', None)  # Remove the user from session
+    return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND) 
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_form(request: Request):
@@ -81,28 +102,41 @@ async def read_dashboard(request: Request, user: User = Depends(get_current_user
 
 @app.get("/schedule", response_class=HTMLResponse)
 async def read_schedule(request: Request, user: User = Depends(get_current_active_user)):
-    return templates.TemplateResponse("schedule.html", {"request": request, "schedule": default_schedule, "user": user})
+    return templates.TemplateResponse("schedule.html", {"request": request, "schedule": in_memory_schedule, "user": user})
 
 @app.get("/manage-schedule", response_class=HTMLResponse)
 async def manage_schedule(request: Request, user: User = Depends(get_current_active_user)):
-    return templates.TemplateResponse("manage_schedule.html", {"request": request, "days_of_week": days_of_week, "time_slots": time_slots, "schedule": default_schedule, "user": user})
+    return templates.TemplateResponse("manage_schedule.html", {"request": request, "days_of_week": days_of_week, "time_slots": time_slots, "schedule": in_memory_schedule, "user": user})
 
 @app.post("/manage-schedule")
-async def update_schedule(request: Request, user: User = Depends(get_current_user)):
-    data = await request.json()
-    # Assuming data contains day, start_time, and end_time
-    day = data.get("day")
-    start_time = data.get("start_time")
-    end_time = data.get("end_time")
+async def update_schedule(request: Request, user: User = Depends(get_current_active_user)):
+    form_data = await request.form()
+    schedule_data = {}
+    error = False
 
-    if day in default_schedule:
-        default_schedule[day]["start"] = start_time
-        default_schedule[day]["end"] = end_time
-    else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid day")
+    for day in days_of_week:
+        start_time_key = f"{day}-start-time"
+        end_time_key = f"{day}-end-time"
+        start_time = form_data.get(start_time_key)
+        end_time = form_data.get(end_time_key)
 
-    # Redirect to the schedule view page after updating the schedule
-    url = request.url_for("read_schedule")
-    return RedirectResponse(url, status_code=status.HTTP_302_FOUND)
+        if start_time >= end_time:
+            error = True
+            break
+
+        schedule_data[day] = {
+            "start": start_time,
+            "end": end_time
+        }
+
+    if error:
+        # Handle the error, e.g., return an error message to the form
+        return templates.TemplateResponse("manage_schedule.html", {"request": request, "error": "End time must be later than start time", "user": user, "schedule": schedule_data})
+
+    # Save to a JSON file
+    with open("schedule.json", "w") as file:
+        json.dump(schedule_data, file, indent=4)
+
+    return RedirectResponse(url="/schedule", status_code=status.HTTP_302_FOUND)
 
 

@@ -7,35 +7,41 @@
 </head>
 
 <body>
-    <h1 class="center-text">Welcome to the Building Automation System Dashboard</h1>
+    <h1 class="header">Building Automation System Dashboard</h1>
 
-    <div class="dashboard-container center-text">
-        <h2>Central Plant Temperatures</h2>
-        <p>Heating Plant Temperature: 75°F</p>
-        <p>Cooling Plant Temperature: 65°F</p>
+    <div class="dashboard-container">
+        <div class="weekdays">
+            <h2 class="section-title">Central Plant Temperatures</h2>
+            <div class="data-dashboard">
+                <p>Heating Plant Temperature: 75°F</p>
+                <p>Cooling Plant Temperature: 65°F</p>
+            </div>
 
-        <h2>Air Handling Units</h2>
-        <p>AHU1 Motor Status: Running</p>
-        <p>AHU2 Motor Status: Off</p>
+            <h2 class="section-title">Air Handling Units</h2>
+            <div class="data-dashboard">
+                <p>AHU1 Motor Status: Running</p>
+                <p>AHU2 Motor Status: Off</p>
+            </div>
 
-        <h2>Temperature Sensors</h2>
-        <p>AHU Leaving Air Temperature: 68°F</p>
-        <p>Outside Air Temperature: 55°F</p>
+            <h2 class="section-title">Temperature Sensors</h2>
+            <div class="data-dashboard">
+                <p>AHU Leaving Air Temperature: 68°F</p>
+                <p>Outside Air Temperature: 55°F</p>
+            </div>
+        </div>
     </div>
 
-    {% if user_logged_in %}
-    <div class="center-text">
-        <a href="/schedule" class="link">View Schedule</a>
-        <a href="/manage-schedule" class="link">Manage Schedule</a>
-        <!-- Content displayed only when user is logged in -->
-        <p>Welcome, you are currently logged in.</p>
+    <div class="button-container">
+        {% if user_logged_in %}
+            <p>Welcome, you are currently logged in.</p>
+            <a href="/schedule" class="link">View Schedule</a>
+            <a href="/manage-schedule" class="link">Manage Schedule</a>
+            <a href="/logout" class="link">Logout</a>
+        {% else %}
+            <a href="/login" class="link">Login</a>
+        {% endif %}
     </div>
-    {% else %}
-    <div class="center-text">
-        <a href="/login" class="link">Login</a>
-    </div>
-    {% endif %}
-    
+
 </body>
 
 </html>

@@ -77,18 +77,50 @@ body {
 
 .schedule-container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    justify-content: space-between; /* Distribute space between weekdays and weekends */
+    align-items: flex-start; /* Align items to the start of the cross axis */
+    gap: 20px; /* Adds space between the weekdays and weekends sections */
     margin-top: 20px;
 }
 
+.weekdays, .weekends {
+    display: flex;
+    flex-direction: column; /* Stack items vertically */
+    align-items: center; /* Center items in each section */
+    width: 48%; /* Adjust width as necessary, ensuring they fit side-by-side */
+}
+
 .day-schedule {
-    margin: 10px;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 5px;
-    background-color: #f4f4f4; /* Light grey background */
-    width: 30%;
+    background-color: #f4f4f4;
+    width: auto; /* Auto width to fit content */
+    min-width: 200px; /* Adjust this value as needed */
+    text-align: center; /* Center the text within each day-schedule */
+    /* Consider setting a max-width if necessary */
+}
+
+.dashboard-container {
+    display: flex;
+    flex-direction: column; /* Stack items vertically */
+    align-items: center; /* Align items to the center */
+    justify-content: center; /* Center the items vertically if there is extra space */
+    gap: 10px; /* Adds space between the items */
+    margin-top: 20px;
+    margin-left: auto; /* Centering the container itself */
+    margin-right: auto; /* Centering the container itself */
+}
+
+.data-dashboard {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f4f4f4;
+    width: auto; /* Auto width to fit content */
+    min-width: 200px; /* You can adjust this value */
+    text-align: center; /* Center the text within each day-schedule */
+    /* You can also set a max-width if necessary */
 }
 
 .day-title {

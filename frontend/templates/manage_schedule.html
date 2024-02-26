@@ -4,16 +4,39 @@
 <head>
     <title>Manage Schedule</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script>
+        function validateSchedule() {
+            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+            for (const day of daysOfWeek) {
+                const startTimeSelect = document.querySelector(`select[name="${day}-start-time"]`);
+                const endTimeSelect = document.querySelector(`select[name="${day}-end-time"]`);
+                
+                if (!startTimeSelect || !endTimeSelect) {
+                    continue; // Skip days that are not in the form
+                }
+
+                const startTime = startTimeSelect.value;
+                const endTime = endTimeSelect.value;
+
+                if (startTime >= endTime) {
+                    alert(`End time must be later than start time for ${day}.`);
+                    return false; // Prevent form submission
+                }
+            }
+            return true; // Allow form submission
+        }
+    </script>
 </head>
 
 <body>
     <h1 class="header">Weekly Schedule Manager</h1>
-    <form method="post" action="/manage-schedule">
+    <form method="post" action="/manage-schedule" onsubmit="return validateSchedule()">
         <div class="schedule-container">
             <!-- Weekdays Section -->
             <div class="weekdays">
                 <h2 class="section-title">Weekdays</h2>
-                {% for day in days_of_week[1:6] %} <!-- Loop through Monday to Friday -->
+                {% for day in days_of_week[1:6] %}
                 <div class="day-schedule">
                     <h3 class="day-title">{{ day }}</h3>
                     <select name="{{ day }}-start-time" class="dropdown">
@@ -37,7 +60,7 @@
             <!-- Weekend Section -->
             <div class="weekends">
                 <h2 class="section-title">Weekends</h2>
-                {% for day in [days_of_week[0], days_of_week[6]] %} <!-- Loop through Sunday and Saturday -->
+                {% for day in [days_of_week[0], days_of_week[6]] %}
                 <div class="day-schedule">
                     <h3 class="day-title">{{ day }}</h3>
                     <select name="{{ day }}-start-time" class="dropdown">

@@ -7,19 +7,47 @@
 </head>
 
 <body>
-    <div class="center-container">
-        <h1 class="header">Current Schedule</h1>
-        <div class="schedule-table">
+    <h1 class="header">Current Schedule</h1>
+
+    <div class="schedule-container">
+        <!-- Weekdays Section -->
+        <div class="weekdays">
+            <h2 class="section-title">Weekdays</h2>
             {% if schedule %}
-            <!-- Display schedule data -->
             {% for day, times in schedule.items() %}
-            <p>{{ day }}: Start - {{ times.start | default('Not set') }}, End - {{ times.end | default('Not set') }}</p>
+            {% if day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] %}
+            <div class="day-schedule">
+                <h3 class="day-title">{{ day }}</h3>
+                <p>Start: {{ times.start | default('Not set') }}</p>
+                <p>End: {{ times.end | default('Not set') }}</p>
+            </div>
+            {% endif %}
             {% endfor %}
             {% else %}
-            <!-- Display message if schedule is empty or API call fails -->
-            <p>No schedule data available. Please check back later or contact the administrator.</p>
+            <p class="no-schedule">No weekdays schedule data available.</p>
             {% endif %}
         </div>
+
+        <!-- Weekend Section -->
+        <div class="weekends">
+            <h2 class="section-title">Weekends</h2>
+            {% if schedule %}
+            {% for day, times in schedule.items() %}
+            {% if day in ['Saturday', 'Sunday'] %}
+            <div class="day-schedule">
+                <h3 class="day-title">{{ day }}</h3>
+                <p>Start: {{ times.start | default('Not set') }}</p>
+                <p>End: {{ times.end | default('Not set') }}</p>
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% else %}
+            <p class="no-schedule">No weekends schedule data available.</p>
+            {% endif %}
+        </div>
+
+    </div>
+    <div class="button-container">
         <a href="/" class="link">Back to Home</a>
     </div>
 </body>
