@@ -33,6 +33,11 @@ from bacpypes3.local.analog import AnalogValueObject
 from bacpypes3.local.binary import BinaryValueObject
 from bacpypes3.local.cmd import Commandable
 
+import ssl
+
+# python app.py --ssl-certfile /home/bbartling/FreeBAS/backend/certs/certificate.pem --ssl-keyfile /home/bbartling/FreeBAS/backend/certs/private.key
+
+
 # Create a FastAPI instance
 app = FastAPI()
 
@@ -48,7 +53,14 @@ class CommandableAnalogValueObject(Commandable, AnalogValueObject):
     """
 
 class FreeBasApplication:
-    def __init__(self, args, test_bv, test_av, commandable_analog_value):
+    def __init__(self, 
+                 args, 
+                 test_bv, 
+                 test_av, 
+                 commandable_analog_value,
+                ssl_certfile,
+                ssl_keyfile,
+                 ):
         # embed an application
         self.bacnet_app = Application.from_args(args)
 
@@ -63,6 +75,8 @@ class FreeBasApplication:
         self.bacnet_app.add_object(commandable_analog_value)
         
         self.web_app = FastAPI()
+        self.ssl_certfile = ssl_certfile
+        self.ssl_keyfile = ssl_keyfile
 
         # Setup FastAPI routes
         self.setup_routes()
@@ -155,9 +169,22 @@ class FreeBasApplication:
         
         
     async def start_server(self, host="0.0.0.0", port=8000, log_level="info"):
-        config = uvicorn.Config(self.web_app, host=host, port=port, log_level=log_level)
+        config_kwargs = {
+            "app": self.web_app, 
+            "host": host, 
+            "port": port,
+            "log_level": log_level,
+        }
+
+        # Add SSL configuration if certfile and keyfile are provided
+        if self.ssl_certfile and self.ssl_keyfile:
+            config_kwargs["ssl_keyfile"] = self.ssl_keyfile
+            config_kwargs["ssl_certfile"] = self.ssl_certfile
+
+        config = uvicorn.Config(**config_kwargs)
         server = uvicorn.Server(config)
         await server.serve()
+
 
     def setup_routes(self):
         # Define FastAPI routes here
@@ -253,6 +280,10 @@ async def main():
         help="logging level",
         default="info",
     )
+    
+    parser.add_argument("--ssl-certfile", help="SSL certificate file")
+    parser.add_argument("--ssl-keyfile", help="SSL key file")
+    
     args = parser.parse_args()
     
     if _debug:
@@ -292,10 +323,16 @@ async def main():
         test_av=test_av,
         test_bv=test_bv,
         commandable_analog_value=commandable_analog_value,
+        ssl_certfile=args.ssl_certfile,
+        ssl_keyfile=args.ssl_keyfile
     )
-
+    
     # Start the web server
-    await sample_app.start_server(args.host, args.port, args.log_level)
+    await sample_app.start_server(
+        args.host, 
+        args.port, 
+        args.log_level,
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
