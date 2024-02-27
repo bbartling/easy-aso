@@ -4,7 +4,7 @@ import asyncio
 import argparse
 import uvicorn
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
@@ -33,9 +33,9 @@ from bacpypes3.local.analog import AnalogValueObject
 from bacpypes3.local.binary import BinaryValueObject
 from bacpypes3.local.cmd import Commandable
 
-import ssl
+from web_routes import setup_routes
 
-# python app.py --ssl-certfile /home/bbartling/FreeBAS/backend/certs/certificate.pem --ssl-keyfile /home/bbartling/FreeBAS/backend/certs/private.key
+# python main.py --ssl-certfile /home/bbartling/FreeBAS/backend/certs/certificate.pem --ssl-keyfile /home/bbartling/FreeBAS/backend/certs/private.key
 
 
 # Create a FastAPI instance
@@ -79,7 +79,7 @@ class FreeBasApplication:
         self.ssl_keyfile = ssl_keyfile
 
         # Setup FastAPI routes
-        self.setup_routes()
+        setup_routes(self.web_app, self)
 
         # create a task to update the values
         asyncio.create_task(self.update_values())
@@ -185,82 +185,83 @@ class FreeBasApplication:
         server = uvicorn.Server(config)
         await server.serve()
 
+    async def config(self):
+        """
+        Return the configuration as JSON.
+        """
+        _log.debug("config")
 
-    def setup_routes(self):
-        # Define FastAPI routes here
-        @self.web_app.get("/")
+        object_list = []
+        for obj in self.bacnet_app.objectIdentifier.values():
+            _log.debug("    - obj: %r", obj)
+            object_list.append(sequence_to_json(obj))
+
+        return {"BACpypes": dict(settings), "application": object_list}
+
+
+    async def who_is(self, 
+                    device_instance: Union[int, str],  # Allow both int and str
+                    address: Optional[str] = None):
+        """
+        Send out a Who-Is request and return the I-Am messages.
+        """
+
+        # Convert device_instance to int if it's a string
+        if isinstance(device_instance, str):
+            device_instance = int(device_instance)
+
+        # if the address is None in the who_is() call it defaults to a global
+        # broadcast but it's nicer to be explicit here
+        destination: Address
+        if address:
+            destination = Address(address)
+        else:
+            destination = GlobalBroadcast()
+        if _debug:
+            _log.debug("    - destination: %r", destination)
         
-        async def hello_world():
-            # You can access class attributes here
-            return {"message": "Hello World"}
+        # returns a list, there should be only one
+        i_ams = await self.bacnet_app.who_is(device_instance, device_instance, destination)
 
-
-        @self.web_app.get("/config")
-        async def config():
-            """
-            Return the configuration as JSON.
-            """
-            _log.debug("config")
-
-            object_list = []
-            for obj in self.bacnet_app.objectIdentifier.values():
-                _log.debug("    - obj: %r", obj)
-                object_list.append(sequence_to_json(obj))
-
-            return {"BACpypes": dict(settings), "application": object_list}
-
-
-        @self.web_app.get("/{device_instance}")
-        async def who_is(device_instance: int, address: Optional[str] = None):
-            """
-            Send out a Who-Is request and return the I-Am messages.
-            """
-            _log.debug("who_is %r address=%r", device_instance, address)
-
-            # if the address is None in the who_is() call it defaults to a global
-            # broadcast but it's nicer to be explicit here
-            destination: Address
-            if address:
-                destination = Address(address)
-            else:
-                destination = GlobalBroadcast()
+        result = []
+        for i_am in i_ams:
             if _debug:
-                _log.debug("    - destination: %r", destination)
+                _log.debug("    - i_am: %r", i_am)
+            result.append(sequence_to_json(i_am))
 
-            # returns a list, there should be only one
-            i_ams = await self.bacnet_app.who_is(device_instance, device_instance, destination)
-
-            result = []
-            for i_am in i_ams:
-                if _debug:
-                    _log.debug("    - i_am: %r", i_am)
-                result.append(sequence_to_json(i_am))
-
-            return result
+        return result
 
 
-        @self.web_app.get("/{device_instance}/{object_identifier}")
-        async def read_present_value(device_instance: int, object_identifier: str):
-            """
-            Read the `present-value` property from an object.
-            """
-            _log.debug("read_present_value %r %r", device_instance, object_identifier)
+    async def read_present_value(self, device_instance: int, object_identifier: str):
+        """
+        Read the `present-value` property from an object.
+        """
+        _log.debug("read_present_value %r %r", device_instance, object_identifier)
+        
+        if isinstance(device_instance, str):
+            device_instance = int(device_instance)
 
-            return await self._read_property(device_instance, object_identifier, "present-value")
+        return await self._read_property(device_instance, object_identifier, "present-value")
 
 
-        @self.web_app.get("/{device_instance}/{object_identifier}/{property_identifier}")
-        async def read_property(
-            device_instance: int, object_identifier: str, property_identifier: str
+    async def read_property(
+            self,
+            device_instance: int, 
+            object_identifier: str, 
+            property_identifier: str
         ):
             """
             Read a property from an object.
             """
             _log.debug("read_present_value %r %r", device_instance, object_identifier)
-
+            
+            if isinstance(device_instance, str):
+                device_instance = int(device_instance)
+                
             return await self._read_property(device_instance, object_identifier, property_identifier)
 
-
+    
+    
 async def main():
 
     parser = SimpleArgumentParser()
