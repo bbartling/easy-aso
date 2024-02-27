@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-import argparse
+import re
 import uvicorn
 from contextlib import asynccontextmanager
 from typing import Optional, Union
@@ -17,6 +17,7 @@ from bacpypes3.primitivedata import Atomic, ObjectIdentifier
 from bacpypes3.constructeddata import Sequence, AnyAtomic, Array, List
 from bacpypes3.apdu import ErrorRejectAbortNack
 from bacpypes3.app import Application
+from bacpypes3.primitivedata import Null, CharacterString, ObjectIdentifier
 
 # for serializing the configuration
 from bacpypes3.settings import settings
@@ -38,29 +39,30 @@ from web_routes import setup_routes
 # python main.py --ssl-certfile /home/bbartling/FreeBAS/backend/certs/certificate.pem --ssl-keyfile /home/bbartling/FreeBAS/backend/certs/private.key
 
 
-# Create a FastAPI instance
-app = FastAPI()
-
 # Set up logging
 _debug = 0
 _log = ModuleLogger(globals())
 
+# bacnet server update interval
 INTERVAL = 1.0
+
 
 class CommandableAnalogValueObject(Commandable, AnalogValueObject):
     """
     Commandable Analog Value Object
     """
 
+
 class FreeBasApplication:
-    def __init__(self, 
-                 args, 
-                 test_bv, 
-                 test_av, 
-                 commandable_analog_value,
-                ssl_certfile,
-                ssl_keyfile,
-                 ):
+    def __init__(
+        self,
+        args,
+        test_bv,
+        test_av,
+        commandable_analog_value,
+        ssl_certfile,
+        ssl_keyfile,
+    ):
         # embed an application
         self.bacnet_app = Application.from_args(args)
 
@@ -73,7 +75,7 @@ class FreeBasApplication:
 
         self.commandable_analog_value = commandable_analog_value
         self.bacnet_app.add_object(commandable_analog_value)
-        
+
         self.web_app = FastAPI()
         self.ssl_certfile = ssl_certfile
         self.ssl_keyfile = ssl_keyfile
@@ -84,6 +86,25 @@ class FreeBasApplication:
         # create a task to update the values
         asyncio.create_task(self.update_values())
 
+    # for FASTapi web app
+    async def start_server(self, host="0.0.0.0", port=8000, log_level="info"):
+        config_kwargs = {
+            "app": self.web_app,
+            "host": host,
+            "port": port,
+            "log_level": log_level,
+        }
+
+        # Add SSL configuration if certfile and keyfile are provided
+        if self.ssl_certfile and self.ssl_keyfile:
+            config_kwargs["ssl_keyfile"] = self.ssl_keyfile
+            config_kwargs["ssl_certfile"] = self.ssl_certfile
+
+        config = uvicorn.Config(**config_kwargs)
+        server = uvicorn.Server(config)
+        await server.serve()
+
+    # update BACnet server
     async def update_values(self):
         test_values = [
             ("active", 1.0),
@@ -105,13 +126,9 @@ class FreeBasApplication:
 
             self.test_av.presentValue = next_value[1]
             self.test_bv.presentValue = next_value[0]
-            
 
     async def _read_property(
-        self,
-        device_instance: int, 
-        object_identifier: str, 
-        property_identifier: str
+        self, device_instance: int, object_identifier: str, property_identifier: str
     ):
         """
         Read a property from an object.
@@ -119,7 +136,9 @@ class FreeBasApplication:
         _log.debug("_read_property %r %r", device_instance, object_identifier)
 
         device_address: Address
-        device_info = self.bacnet_app.device_info_cache.instance_cache.get(device_instance, None)
+        device_info = self.bacnet_app.device_info_cache.instance_cache.get(
+            device_instance, None
+        )
         if device_info:
             device_address = device_info.device_address
             _log.debug("    - cached address: %r", device_address)
@@ -161,33 +180,73 @@ class FreeBasApplication:
         elif isinstance(property_value, (Array, List)):
             encoded_value = extendedlist_to_json_list(property_value)
         else:
-            raise HTTPException(status_code=400, detail=f"JSON encoding: {property_value}")
+            raise HTTPException(
+                status_code=400, detail=f"JSON encoding: {property_value}"
+            )
         if _debug:
             _log.debug("    - encoded_value: %r", encoded_value)
 
         return {property_identifier: encoded_value}
-        
-        
-    async def start_server(self, host="0.0.0.0", port=8000, log_level="info"):
-        config_kwargs = {
-            "app": self.web_app, 
-            "host": host, 
-            "port": port,
-            "log_level": log_level,
-        }
 
-        # Add SSL configuration if certfile and keyfile are provided
-        if self.ssl_certfile and self.ssl_keyfile:
-            config_kwargs["ssl_keyfile"] = self.ssl_keyfile
-            config_kwargs["ssl_certfile"] = self.ssl_certfile
+    async def _write_property(
+        self,
+        address: Address,
+        object_identifier: ObjectIdentifier,
+        property_identifier: str,
+        value: str,
+        priority: int = -1,
+    ) -> None:
+        """
+        usage: write address objid prop[indx] value [ priority ]
+        """
+        if _debug:
+            _log.debug(
+                "do_write %r %r %r %r %r",
+                address,
+                object_identifier,
+                property_identifier,
+                value,
+                priority,
+            )
 
-        config = uvicorn.Config(**config_kwargs)
-        server = uvicorn.Server(config)
-        await server.serve()
+        # 'property[index]' matching
+        property_index_re = re.compile(r"^([A-Za-z-]+)(?:\[([0-9]+)\])?$")
+
+        # split the property identifier and its index
+        property_index_match = property_index_re.match(property_identifier)
+        if not property_index_match:
+            return "property specification incorrect"
+
+        property_identifier, property_array_index = property_index_match.groups()
+        if property_array_index is not None:
+            property_array_index = int(property_array_index)
+
+        if value == "null":
+            if priority is None:
+                return "Error, null is only for overrides"
+            value = Null(())
+
+        try:
+            response = await self.bacnet_app.write_property(
+                address,
+                object_identifier,
+                property_identifier,
+                value,
+                property_array_index,
+                priority,
+            )
+            if _debug:
+                _log.debug("    - response: %r", response)
+            return response
+
+        except ErrorRejectAbortNack as err:
+            if _debug:
+                _log.debug("    - exception: %r", err)
+            return str(err)
 
     async def config(self):
         """
-        Return the configuration as JSON.
+        Return the bacpypes configuration as JSON.
         """
         _log.debug("config")
 
@@ -198,10 +257,11 @@ class FreeBasApplication:
 
         return {"BACpypes": dict(settings), "application": object_list}
 
-
-    async def who_is(self, 
-                    device_instance: Union[int, str],  # Allow both int and str
-                    address: Optional[str] = None):
+    async def who_is(
+        self,
+        device_instance: Union[int, str],  # Allow both int and str
+        address: Optional[str] = None,
+    ):
         """
         Send out a Who-Is request and return the I-Am messages.
         """
@@ -219,9 +279,11 @@ class FreeBasApplication:
             destination = GlobalBroadcast()
         if _debug:
             _log.debug("    - destination: %r", destination)
-        
+
         # returns a list, there should be only one
-        i_ams = await self.bacnet_app.who_is(device_instance, device_instance, destination)
+        i_ams = await self.bacnet_app.who_is(
+            device_instance, device_instance, destination
+        )
 
         result = []
         for i_am in i_ams:
@@ -231,37 +293,54 @@ class FreeBasApplication:
 
         return result
 
-
     async def read_present_value(self, device_instance: int, object_identifier: str):
         """
         Read the `present-value` property from an object.
         """
         _log.debug("read_present_value %r %r", device_instance, object_identifier)
-        
+
         if isinstance(device_instance, str):
             device_instance = int(device_instance)
 
-        return await self._read_property(device_instance, object_identifier, "present-value")
-
+        return await self._read_property(
+            device_instance, object_identifier, "present-value"
+        )
 
     async def read_property(
-            self,
-            device_instance: int, 
-            object_identifier: str, 
-            property_identifier: str
-        ):
-            """
-            Read a property from an object.
-            """
-            _log.debug("read_present_value %r %r", device_instance, object_identifier)
-            
-            if isinstance(device_instance, str):
-                device_instance = int(device_instance)
-                
-            return await self._read_property(device_instance, object_identifier, property_identifier)
+        self, device_instance: int, object_identifier: str, property_identifier: str
+    ):
+        """
+        Read a property from an object.
+        """
+        _log.debug("read_present_value %r %r", device_instance, object_identifier)
 
-    
-    
+        if isinstance(device_instance, str):
+            device_instance = int(device_instance)
+
+        return await self._read_property(
+            device_instance, object_identifier, property_identifier
+        )
+
+    async def write_property(
+        self,
+        device_instance: int,
+        object_identifier: str,
+        property_identifier: str,
+        value: str,
+        priority: int = -1,
+    ):
+        """
+        Write a property from an object.
+        """
+
+        if isinstance(device_instance, str):
+            device_instance = int(device_instance)
+
+        return await self._write_property(
+            device_instance, object_identifier, property_identifier, value, priority
+        )
+
+
 async def main():
 
     parser = SimpleArgumentParser()
@@ -281,12 +360,12 @@ async def main():
         help="logging level",
         default="info",
     )
-    
+
     parser.add_argument("--ssl-certfile", help="SSL certificate file")
     parser.add_argument("--ssl-keyfile", help="SSL key file")
-    
+
     args = parser.parse_args()
-    
+
     if _debug:
         _log.debug("args: %r", args)
 
@@ -325,16 +404,16 @@ async def main():
         test_bv=test_bv,
         commandable_analog_value=commandable_analog_value,
         ssl_certfile=args.ssl_certfile,
-        ssl_keyfile=args.ssl_keyfile
+        ssl_keyfile=args.ssl_keyfile,
     )
-    
+
     # Start the web server
     await sample_app.start_server(
-        args.host, 
-        args.port, 
+        args.host,
+        args.port,
         args.log_level,
     )
 
+
 if __name__ == "__main__":
     asyncio.run(main())
-
