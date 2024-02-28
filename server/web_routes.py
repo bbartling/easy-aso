@@ -30,6 +30,8 @@ class WritePropertyRequest(BaseModel):
 
 
 def setup_routes(app: FastAPI, bacnet_app):
+    
+    # for testing purposes
     @app.get("/hello")
     async def hello_world():
         return {"message": "Hello!"}

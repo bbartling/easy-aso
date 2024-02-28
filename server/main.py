@@ -16,6 +16,7 @@ from typing import Optional
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
+import secrets 
 
 from bacpypes3.debugging import ModuleLogger
 from bacpypes3.argparse import SimpleArgumentParser
@@ -44,7 +45,7 @@ from bacpypes3.local.cmd import Commandable
 
 from web_routes import setup_routes
 
-# python main.py --ssl-certfile /home/bbartling/FreeBAS/backend/certs/certificate.pem --ssl-keyfile /home/bbartling/FreeBAS/backend/certs/private.key
+# $ python main.py --tls
 
 
 # Set up logging
@@ -100,8 +101,11 @@ class FreeBasApplication:
         self.days_of_week = []
         self.time_slots = []
         self.default_schedule = {}
+        
+        # Generates a 32-byte (256-bit) URL-safe secret key
+        secret_key = secrets.token_urlsafe(32)  
 
-        self.web_app.add_middleware(SessionMiddleware, secret_key="your-secret-key")
+        self.web_app.add_middleware(SessionMiddleware, secret_key=secret_key)
         self.web_app.mount("/static", StaticFiles(directory="static"), name="static")
         self.templates = Jinja2Templates(directory="templates")
         
