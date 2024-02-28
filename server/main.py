@@ -2,12 +2,20 @@ from __future__ import annotations
 
 import asyncio
 import re
-import uvicorn
-from contextlib import asynccontextmanager
+
+import os
+import json
 from typing import Optional, Union
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+from typing import Optional
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
+import uvicorn
 
 from bacpypes3.debugging import ModuleLogger
 from bacpypes3.argparse import SimpleArgumentParser
@@ -46,6 +54,9 @@ _log = ModuleLogger(globals())
 # bacnet server update interval
 INTERVAL = 1.0
 
+# Web App User authentication model
+class User(BaseModel):
+    username: str
 
 class CommandableAnalogValueObject(Commandable, AnalogValueObject):
     """
@@ -60,8 +71,7 @@ class FreeBasApplication:
         test_bv,
         test_av,
         commandable_analog_value,
-        ssl_certfile,
-        ssl_keyfile,
+        use_tls=False
     ):
         # embed an application
         self.bacnet_app = Application.from_args(args)
@@ -77,15 +87,41 @@ class FreeBasApplication:
         self.bacnet_app.add_object(commandable_analog_value)
 
         self.web_app = FastAPI()
-        self.ssl_certfile = ssl_certfile
-        self.ssl_keyfile = ssl_keyfile
+        
+        # Conditional TLS setup
+        if use_tls:
+            certs_dir = os.path.join(os.path.dirname(__file__), 'certs')
+            self.ssl_certfile = os.path.join(certs_dir, 'certificate.pem')
+            self.ssl_keyfile = os.path.join(certs_dir, 'private.key')
+        else:
+            self.ssl_certfile = None
+            self.ssl_keyfile = None
+            
+        self.days_of_week = []
+        self.time_slots = []
+        self.default_schedule = {}
 
-        # Setup FastAPI routes
+        self.web_app.add_middleware(SessionMiddleware, secret_key="your-secret-key")
+        self.web_app.mount("/static", StaticFiles(directory="static"), name="static")
+        self.templates = Jinja2Templates(directory="templates")
+        
+        # Load the default schedule and user setup
+        self.initialize_schedule()
+        self.users = {"admin": {"username": "admin", "password": "admin"}}
+        
+        # OAuth2 setup
+        self.oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+        
+        # Setup FastAPI routes and additional functionalities
         setup_routes(self.web_app, self)
+        
+        # Add user authentication and schedule loading functions here
+        self.in_memory_schedule = self.load_schedule()
 
-        # create a task to update the values
+        # create a task to update the values of the BACnet server
         asyncio.create_task(self.update_values())
 
+        
     # for FASTapi web app
     async def start_server(self, host="0.0.0.0", port=8000, log_level="info"):
         config_kwargs = {
@@ -97,12 +133,46 @@ class FreeBasApplication:
 
         # Add SSL configuration if certfile and keyfile are provided
         if self.ssl_certfile and self.ssl_keyfile:
-            config_kwargs["ssl_keyfile"] = self.ssl_keyfile
             config_kwargs["ssl_certfile"] = self.ssl_certfile
+            config_kwargs["ssl_keyfile"] = self.ssl_keyfile
 
         config = uvicorn.Config(**config_kwargs)
         server = uvicorn.Server(config)
         await server.serve()
+
+    def initialize_schedule(self):
+        # Define days of the week
+        self.days_of_week = [
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+        ]
+        
+        # Define time slots for a 24-hour day
+        self.time_slots = [f"{hour:02d}:00" for hour in range(24)]
+        
+        # Load the default schedule with 7 AM to 5 PM for Monday to Friday
+        self.default_schedule = {
+            day: {"start": "07:00", "end": "17:00"}
+            if day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+            else {"start": None, "end": None}
+            for day in self.days_of_week
+        }
+        
+        return self
+
+
+    def load_schedule(self):
+        """Load the schedule from the JSON file into the cache."""
+        try:
+            with open("schedule.json", "r") as file:
+                return json.load(file)
+        except FileNotFoundError:
+            return {}  # Or return an empty dict
 
     # update BACnet server
     async def update_values(self):
@@ -344,25 +414,10 @@ class FreeBasApplication:
 async def main():
 
     parser = SimpleArgumentParser()
-    parser.add_argument(
-        "--host",
-        help="host address for service",
-        default="0.0.0.0",
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        help="host address for service",
-        default=8000,
-    )
-    parser.add_argument(
-        "--log-level",
-        help="logging level",
-        default="info",
-    )
-
-    parser.add_argument("--ssl-certfile", help="SSL certificate file")
-    parser.add_argument("--ssl-keyfile", help="SSL key file")
+    parser.add_argument("--host", help="Host address for the service", default="0.0.0.0")
+    parser.add_argument("--port", type=int, help="Port for the service", default=8000)
+    parser.add_argument("--log-level", help="Logging level", default="info")
+    parser.add_argument('--tls', action='store_true', help='Enable TLS by using SSL cert and key from the certs directory')
 
     args = parser.parse_args()
 
@@ -397,21 +452,20 @@ async def main():
         description="Commandable analog value object",
     )
 
-    # Instantiate the FreeBasApplication with BACnet objects
+    # Instantiate the FreeBasApplication with BACnet objects and TLS flag
     sample_app = FreeBasApplication(
         args,
         test_av=test_av,
         test_bv=test_bv,
         commandable_analog_value=commandable_analog_value,
-        ssl_certfile=args.ssl_certfile,
-        ssl_keyfile=args.ssl_keyfile,
+        use_tls=args.tls,  # Pass the TLS flag directly
     )
 
-    # Start the web server
+    # Start the web server with host, port, and log level from command-line arguments
     await sample_app.start_server(
-        args.host,
-        args.port,
-        args.log_level,
+        host=args.host,
+        port=args.port,
+        log_level=args.log_level,
     )
 
 
