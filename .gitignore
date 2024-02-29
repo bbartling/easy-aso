@@ -8,6 +8,11 @@ __pycache__/
 
 .venv/
 
+raw_graph_models/
+devices/raw_graph_models/
+raw_graph_models/
+devices/processed_graph_models/
+
 *.pyc
 __pycache__/
 

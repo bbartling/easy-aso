@@ -1,10 +1,14 @@
 # server
 
-* fastAPI and bacpypes3
+* Web app server on fastAPI and bacpypes3
 
-
+## install packages
 ```bash
 $ python -m pip install fastapi bacpypes3
+```
+## run
+```bash
+$ python main.py --tls
 ```
 
 TODO
