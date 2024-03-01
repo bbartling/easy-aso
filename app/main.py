@@ -16,7 +16,7 @@ from typing import Optional
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
-import secrets 
+import secrets
 
 from bacpypes3.debugging import ModuleLogger
 from bacpypes3.argparse import SimpleArgumentParser
@@ -43,7 +43,8 @@ from bacpypes3.local.analog import AnalogValueObject
 from bacpypes3.local.binary import BinaryValueObject
 from bacpypes3.local.cmd import Commandable
 
-from web_routes import setup_routes
+from .routes.web_routes import setup_routes
+
 
 # $ python main.py --tls
 
@@ -59,6 +60,7 @@ INTERVAL = 1.0
 class User(BaseModel):
     username: str
 
+
 class CommandableAnalogValueObject(Commandable, AnalogValueObject):
     """
     Commandable Analog Value Object
@@ -66,14 +68,7 @@ class CommandableAnalogValueObject(Commandable, AnalogValueObject):
 
 
 class FreeBasApplication:
-    def __init__(
-        self,
-        args,
-        test_bv,
-        test_av,
-        commandable_analog_value,
-        use_tls=False
-    ):
+    def __init__(self, args, test_bv, test_av, commandable_analog_value, use_tls=False):
         # embed an application
         self.bacnet_app = Application.from_args(args)
 
@@ -88,44 +83,45 @@ class FreeBasApplication:
         self.bacnet_app.add_object(commandable_analog_value)
 
         self.web_app = FastAPI()
-        
+
         # Conditional TLS setup
         if use_tls:
-            certs_dir = os.path.join(os.path.dirname(__file__), 'certs')
-            self.ssl_certfile = os.path.join(certs_dir, 'certificate.pem')
-            self.ssl_keyfile = os.path.join(certs_dir, 'private.key')
+            certs_dir = os.path.join(os.path.dirname(__file__), "..", "certs")
+            self.ssl_certfile = os.path.join(certs_dir, "certificate.pem")
+            self.ssl_keyfile = os.path.join(certs_dir, "private.key")
         else:
             self.ssl_certfile = None
             self.ssl_keyfile = None
-            
+
         self.days_of_week = []
         self.time_slots = []
         self.default_schedule = {}
-        
+
         # Generates a 32-byte (256-bit) URL-safe secret key
-        secret_key = secrets.token_urlsafe(32)  
+        secret_key = secrets.token_urlsafe(32)
 
         self.web_app.add_middleware(SessionMiddleware, secret_key=secret_key)
-        self.web_app.mount("/static", StaticFiles(directory="static"), name="static")
-        self.templates = Jinja2Templates(directory="templates")
-        
+        self.web_app.mount(
+            "/static", StaticFiles(directory="app/static"), name="static"
+        )
+        self.templates = Jinja2Templates(directory="app/templates")
+
         # Load the default schedule and user setup
         self.initialize_schedule()
         self.users = {"admin": {"username": "admin", "password": "admin"}}
-        
+
         # OAuth2 setup
         self.oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-        
+
         # Setup FastAPI routes and additional functionalities
         setup_routes(self.web_app, self)
-        
+
         # Add user authentication and schedule loading functions here
         self.in_memory_schedule = self.load_schedule()
 
         # create a task to update the values of the BACnet server
         asyncio.create_task(self.update_values())
 
-        
     # for FASTapi web app
     async def start_server(self, host="0.0.0.0", port=8000, log_level="info"):
         config_kwargs = {
@@ -155,10 +151,10 @@ class FreeBasApplication:
             "Friday",
             "Saturday",
         ]
-        
+
         # Define time slots for a 24-hour day
         self.time_slots = [f"{hour:02d}:00" for hour in range(24)]
-        
+
         # Load the default schedule with 7 AM to 5 PM for Monday to Friday
         self.default_schedule = {
             day: {"start": "07:00", "end": "17:00"}
@@ -166,16 +162,22 @@ class FreeBasApplication:
             else {"start": None, "end": None}
             for day in self.days_of_week
         }
-        
-        return self
 
+        return self
 
     def load_schedule(self):
         """Load the schedule from the JSON file into the cache."""
         try:
-            with open("schedule.json", "r") as file:
-                return json.load(file)
+            # Adjust the path since schedule.json is in the project root, not in a config directory
+            schedule_path = os.path.join(
+                os.path.dirname(__file__), "..", "schedule.json"
+            )
+            with open(schedule_path, "r") as file:
+                schedule = json.load(file)
+                print("Schedule loaded: \n", schedule)
+                return schedule
         except FileNotFoundError:
+            print("Error loading default schedule!")
             return {}  # Or return an empty dict
 
     # update BACnet server
@@ -418,10 +420,16 @@ class FreeBasApplication:
 async def main():
 
     parser = SimpleArgumentParser()
-    parser.add_argument("--host", help="Host address for the service", default="0.0.0.0")
+    parser.add_argument(
+        "--host", help="Host address for the service", default="0.0.0.0"
+    )
     parser.add_argument("--port", type=int, help="Port for the service", default=8000)
     parser.add_argument("--log-level", help="Logging level", default="info")
-    parser.add_argument('--tls', action='store_true', help='Enable TLS by using SSL cert and key from the certs directory')
+    parser.add_argument(
+        "--tls",
+        action="store_true",
+        help="Enable TLS by using SSL cert and key from the certs directory",
+    )
 
     args = parser.parse_args()
 

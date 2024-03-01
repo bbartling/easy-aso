@@ -1,13 +1,16 @@
-# Scripts
+# SSL Certificate Generation Script
 
-TODO implement some way to setup supervisory level logic that can interact with the server. Every building BAS has this these basic features:
+## Overview
+This script is used to generate a 2048-bit RSA private key and a self-signed SSL certificate. The certificate is valid for 365 days.
 
-* outside air temperature temp global value
-  * BACnet read in boilers hard-wired outside temp
-  * BACnet write to other devices requiring outside air temp
-* alarm dial out
-  * create logic that can find points that are in "alarm"
-  * dial out to email service
-* equipment schedule
-  * find global occ schedule point on server
-  * BACnet write to equipment that needs writing
+## Steps Performed by the Script
+- Generates a 2048-bit RSA private key (`private.key`).
+- Creates a self-signed SSL certificate (`certificate.pem`). During the creation of the certificate, you will be prompted to enter some information (e.g., country, state, organization), which will be included in the certificate.
+
+## Usage
+1. Give execute permissions to the script: `$ chmod +x make_certs.sh`
+2. Run the script: `$ ./make_certs.sh`
+
+
+## Note
+These certs are self signed so the browser doesnt think they are safe but they are free!

@@ -1,42 +1,40 @@
 # FreeBAS
 
-FreeBAS is a free and open-source building automation system (BAS) server for HVAC controls interfacing.
+FreeBAS stands as an innovative, free, and open-source Building Automation System (BAS) server, designed by a former BAS technician for HVAC control applications. This app is designed to run behind the firewall on the intranet (not cloud) of a larger commercial type building which is typical to any Operations Technology (OT). The core mission is to empower the industry by enabling the cost-free setup of buildings with essential BAS functionalities including advanced alarming, supervisory level logic, and easily discoverable BACnet server properties. Other functionalities which are typical to a BAS server include global variables for the operation of the mechanical system like building occupancy and outdoor air temperature, all managed with the elegance and power of Python.
 
-## Goals:
+A key ambition of FreeBAS is to embrace the advanced ontologies of the Brick schema, showcasing a forward-thinking approach to how data is populated and retrieved from the BACnet system. Hopefully this strategic integration using meta data in the BAS heralds a new era of intuitive, efficient, and scalable building management system architecture.
 
-- **Ease of Setup:** Easily deployable by organization IT departments within the building's local network, behind the firewall.
-- **Interfacing with HVAC Controls:** Seamless integration with existing HVAC controls hardware via the BACnet protocol, supporting typical BACnet discovery processes for device and point discoveries.
-- **Web-Based GUI:** Provide a web application with a user-friendly GUI for building operators to monitor HVAC system data.
-  - **Schedule Equipment:** Implement a generic weekly calendar interface for scheduling equipment operations.
-  - **Alarm Monitoring:** Display sensors in the HVAC system that are in an "alarm" condition. Potentially include efforts made by ASHRAE Guideline 36 for BAS alarm hierarchical suppression and alarm fault detection equations.
-  - **User Management:** Implement typical login features with read/write access control.
-  - **Bidirectional Interface:** Allow adjusting HVAC system setpoints via the GUI.
-- **RESTful Interface:** Support a RESTful API for seamless integration with other systems or applications.
-- **BACnet Interface:** Support a BACnet API for seamless integration with other systems or applications.
-  - **Global Outside Air Temperature:** Provide access to a global shared value of the current outdoor air dry bulb.
-  - **Global Occupancy:** Provide access to a global shared value representing occupancy schedule.
-- **Data Storage:** Store short-term operational data of HVAC systems (e.g., one week) in a database.
-- **Smart Building Integration:** Incorporate ontologies for smart building metadata efforts, enabling easy access to data by IoT devices using graph methods for long-term data storage and analysis.
-  - **Demand Response Client:** Potentially incorporate a demand response client feature such as an Open-ADR Virtual End Node (VEN).
+At the heart of FreeBAS's design philosophy lies a steadfast commitment to accessibility, innovation, and the rejection of traditional, proprietary widget dashboards for logic setup. By leveraging modern computer science patterns (Python scripting to setup logic), FreeBAS aims to address the pressing needs of the BAS industry for open and adaptable solutions. With high hopes as a community-driven tool, FreeBAS not only elevates building automation practices but also positions itself to force technological advancements in an industry that seems stuck. 
 
-## Design Philosophy and Constraints:
-
-The FreeBAS project adheres to a minimalistic approach to building automation, focusing on simplicity and reliability. The following principles guide the project's design:
-- **Minimal Supervisory Logic:** The BAS is designed with minimal supervisory level logic, focusing on essential parameters such as outdoor air temperature and global occupancy for equipment scheduling. This ensures simplicity and ease of use.
-- **Fail-Safe Mode:** Field level devices are equipped with fail-safe modes to operate independently in case of network failure or server downtime. This ensures uninterrupted operation of HVAC systems even under adverse conditions.
-- **Compatibility:** The project aims for compatibility with field level devices capable of standalone operation based on basic inputs like outdoor air temperature and occupancy. For systems requiring extensive supervisory logic, consideration should be given to hardware replacement or contractors with the ability to support minimalistic operation.
-- **Limitations:** FreeBAS may not be suitable for legacy BAS setups with proprietary equipment or poorly maintained HVAC systems. Additionally, organizations with inadequate IT practices may face challenges in implementing and maintaining the system effectively.
+## Screenshot
+![Alt text](/screenshot.jpg)
 
 ## Technologies Used:
 
 - Back End Programming Languages: Python
-- Frameworks/Libraries: [TODO]
+- Frameworks/Libraries: bacpypes3 fastapi
 - Database: [TODO]
-- Web Framework: [AioHTTP or FastAPI?]
+- Web Framework: fastapi
 
 ## Installation:
 
-[TODO]
+1. On Linux clone the repo and cd into it.
+2. Create the Virtual Environment: `$ python -m venv venv`
+3. Activate the Virtual Environment: `$ source venv/bin/activate`
+4. Install Python packages: `$ pip bacpypes3 fastapi itsdangerous uvicorn jinja2 python-multipart ifaddr`
+5. Run the bash script to generate certs `$ ./scripts/generate_certs.sh` where then you can step through the cert making processes as shown below. This app serves the certs directly and they are self signed so you can fill the info or leave default as shown below. Some IT deptartments may prefer having the information filled in depending on the organizations cyber security policies.
+
+```bash
+Country Name (2 letter code) [AU]:
+State or Province Name (full name) [Some-State]:
+Locality Name (eg, city) []:
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:
+Organizational Unit Name (eg, section) []:
+Common Name (e.g. server FQDN or YOUR name) []:
+Email Address []:
+```
+
+6. Run and test web app `$ python -m app.main --tls`
 
 ## License:
 【MIT License】
