@@ -1,33 +1,18 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request, Form, Response
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
 
-from pydantic import BaseModel
-from fastapi.staticfiles import StaticFiles
-from starlette.middleware.sessions import SessionMiddleware
-from datetime import datetime
 
-from typing import Optional, Union
-from pydantic import BaseModel
-import os
-import json
+from app.models.models import WritePropertyRequest
+from app.utils.global_variables import check_occupancy_status
+
 
 """
+https://192.168.0.102:8000/occupancy
 https://192.168.0.102:8000/bacnet/whois/201201
 https://192.168.0.102:8000/bacnet/read/201201/analog-input,2
 https://192.168.0.102:8000/bacnet/write/201201/analog-value,300/present-value/99
 """
-
-
-class WritePropertyRequest(BaseModel):
-    device_instance: int
-    object_identifier: str
-    property_identifier: str
-    value: Optional[
-        Union[float, int, str]
-    ]  # Accepts float, int, or None, and includes str for "null"
-    priority: Optional[int] = None
 
 
 def setup_routes(app: FastAPI, bacnet_app):
@@ -145,11 +130,6 @@ def setup_routes(app: FastAPI, bacnet_app):
     async def manage_schedule(
         request: Request, user: dict = Depends(get_current_active_user)
     ):
-        # Print statements to debug the data being passed to the template
-        print("User:", user)
-        print("Days of Week:", bacnet_app.days_of_week)
-        print("Time Slots:", bacnet_app.time_slots)
-        print("Schedule:", bacnet_app.in_memory_schedule)
 
         return bacnet_app.templates.TemplateResponse(
             "manage_schedule.html",
@@ -195,43 +175,17 @@ def setup_routes(app: FastAPI, bacnet_app):
 
         # Save the updated schedule both in-memory and to file
         bacnet_app.in_memory_schedule = schedule_data
-        try:
-            # Adjusted path to point to the root directory
-            schedule_path = os.path.join(
-                os.path.dirname(__file__), "..", "schedule.json"
-            )
-            with open(schedule_path, "w") as file:
-                json.dump(schedule_data, file, indent=4)
-            print("Schedule successfully updated and saved.")
-        except Exception as e:
-            # Handle potential errors, perhaps logging them or notifying an admin
-            print(f"Failed to save the updated schedule: {e}")
+        bacnet_app.save_schedule(schedule_data)
 
         return RedirectResponse(url="/schedule", status_code=status.HTTP_302_FOUND)
 
     @app.get("/occupancy")
     async def check_occupancy():
-        now = datetime.now()
-        current_day = now.strftime("%A")
-        current_time = now.strftime("%H:%M")
-        todays_schedule = bacnet_app.in_memory_schedule.get(
-            current_day, {"start": None, "end": None}
-        )
-
-        is_occupied = False
-        if todays_schedule["start"] and todays_schedule["end"]:
-            is_occupied = (
-                todays_schedule["start"] <= current_time < todays_schedule["end"]
-            )
+        occupancy_status = await check_occupancy_status(bacnet_app.in_memory_schedule)
 
         return JSONResponse(
             content={
                 "status": "success",
-                "data": {
-                    "current_time": current_time,
-                    "current_day": current_day,
-                    "is_occupied": is_occupied,
-                    "schedule": todays_schedule,
-                },
+                "data": occupancy_status
             }
         )

@@ -43,8 +43,8 @@ from bacpypes3.local.analog import AnalogValueObject
 from bacpypes3.local.binary import BinaryValueObject
 from bacpypes3.local.cmd import Commandable
 
-from .routes.web_routes import setup_routes
-
+from app.routes.web_routes import setup_routes
+from app.utils.global_variables import check_occupancy_status, get_outside_air_temp
 
 # $ python main.py --tls
 
@@ -53,34 +53,21 @@ from .routes.web_routes import setup_routes
 _debug = 0
 _log = ModuleLogger(globals())
 
-# bacnet server update interval
-INTERVAL = 1.0
-
-# Web App User authentication model
-class User(BaseModel):
-    username: str
-
-
-class CommandableAnalogValueObject(Commandable, AnalogValueObject):
-    """
-    Commandable Analog Value Object
-    """
+# bacnet server update BACNET_SERVER_UPDATE_INTERVAL
+BACNET_SERVER_UPDATE_INTERVAL = 1.0
 
 
 class FreeBasApplication:
-    def __init__(self, args, test_bv, test_av, commandable_analog_value, use_tls=False):
+    def __init__(self, args, building_occ, outside_air_temp, use_tls=False):
         # embed an application
         self.bacnet_app = Application.from_args(args)
 
         # extract the kwargs that are special to this application
-        self.test_bv = test_bv
-        self.bacnet_app.add_object(test_bv)
+        self.building_occ = building_occ
+        self.bacnet_app.add_object(building_occ)
 
-        self.test_av = test_av
-        self.bacnet_app.add_object(test_av)
-
-        self.commandable_analog_value = commandable_analog_value
-        self.bacnet_app.add_object(commandable_analog_value)
+        self.outside_air_temp = outside_air_temp
+        self.bacnet_app.add_object(outside_air_temp)
 
         self.web_app = FastAPI()
 
@@ -179,29 +166,50 @@ class FreeBasApplication:
         except FileNotFoundError:
             print("Error loading default schedule!")
             return {}  # Or return an empty dict
+        
+    def save_schedule(self, schedule_data):
+        """Load the schedule from the JSON file into the cache."""
+        try:
+            # Adjusted path to point to the root directory
+            schedule_path = os.path.join(
+                os.path.dirname(__file__), "..", "schedule.json"
+            )
+            with open(schedule_path, "w") as file:
+                json.dump(schedule_data, file, indent=4)
+            print("Schedule successfully updated and saved.")
+        except Exception as e:
+            # Handle potential errors, perhaps logging them or notifying an admin
+            print(f"Failed to save the updated schedule: {e}")
 
     # update BACnet server
     async def update_values(self):
-        test_values = [
-            ("active", 1.0),
-            ("inactive", 2.0),
-            ("active", 3.0),
-            ("inactive", 4.0),
-        ]
-
         while True:
-            await asyncio.sleep(INTERVAL)
-            next_value = test_values.pop(0)
-            test_values.append(next_value)
-            if _debug:
-                _log.debug("    - next_value: %r", next_value)
-                _log.debug(
-                    "commandable_analog_value: %r",
-                    self.commandable_analog_value.presentValue,
-                )
+            await asyncio.sleep(BACNET_SERVER_UPDATE_INTERVAL)
 
-            self.test_av.presentValue = next_value[1]
-            self.test_bv.presentValue = next_value[0]
+            # Initialize default values
+            occ_str = "inactive"  # Default occupancy status
+            out_temp_float = -555.5  # Default outside temperature
+
+            try:
+                # Check occupancy status
+                occ_bool = await check_occupancy_status(self.in_memory_schedule)
+                if occ_bool["is_occupied"]:
+                    occ_str = "active"
+                else:
+                    occ_str = "inactive"
+            except Exception as e:
+                print(f"Error checking occupancy status: {e}")
+
+            try:
+                # Get outside temperature
+                out_temp_float = await get_outside_air_temp()
+
+            except Exception as e:
+                print(f"Error getting outside air temperature: {e}")
+
+            # Update values
+            self.outside_air_temp.presentValue = out_temp_float
+            self.building_occ.presentValue = occ_str
 
     async def _read_property(
         self, device_instance: int, object_identifier: str, property_identifier: str
@@ -437,39 +445,29 @@ async def main():
         _log.debug("args: %r", args)
 
     # define BACnet objects
-    test_av = AnalogValueObject(
+    outside_air_temp = AnalogValueObject(
         objectIdentifier=("analogValue", 1),
-        objectName="av",
+        objectName="Outside_Air_Temp_Sensor",
         presentValue=0.0,
         statusFlags=[0, 0, 0, 0],
         covIncrement=1.0,
     )
-    _log.debug("    - test_av: %r", test_av)
+    _log.debug("    - outside_air_temp: %r", outside_air_temp)
 
-    test_bv = BinaryValueObject(
+    building_occ = BinaryValueObject(
         objectIdentifier=("binaryValue", 1),
-        objectName="bv",
+        objectName="Occupied",
         presentValue="inactive",
         statusFlags=[0, 0, 0, 0],
     )
-    _log.debug("    - test_bv: %r", test_bv)
+    _log.debug("    - building_occ: %r", building_occ)
 
-    # Create an instance of your commandable object
-    commandable_analog_value = CommandableAnalogValueObject(
-        objectIdentifier=("analogValue", 3),
-        objectName="commandable-av",
-        presentValue=-1.0,
-        statusFlags=[0, 0, 0, 0],
-        covIncrement=1.0,
-        description="Commandable analog value object",
-    )
 
     # Instantiate the FreeBasApplication with BACnet objects and TLS flag
     sample_app = FreeBasApplication(
         args,
-        test_av=test_av,
-        test_bv=test_bv,
-        commandable_analog_value=commandable_analog_value,
+        outside_air_temp=outside_air_temp,
+        building_occ=building_occ,
         use_tls=args.tls,  # Pass the TLS flag directly
     )
 
