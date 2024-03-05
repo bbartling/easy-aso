@@ -28,17 +28,46 @@
                 <p>AHU Leaving Air Temperature: 68°F</p>
                 <p>Outside Air Temperature: 55°F</p>
             </div>
-        </div>
-    </div>
 
+            <h2 class="section-title">Occupancy Status</h2>
+            <div id="occupancy-status" class="data-dashboard">
+                <!-- Occupancy data will be filled here by JavaScript -->
+            </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchOccupancyData();
+            setInterval(fetchOccupancyData, 60000); // Refresh every 60 seconds
+        });
+
+        async function fetchOccupancyData() {
+            try {
+                const response = await fetch('/occupancy');
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    const occupancy = data.data;
+                    const occupancyHtml = `
+                        <p>Current Time: ${occupancy.current_time}</p>
+                        <p>Current Day: ${occupancy.current_day}</p>
+                        <p>Occupancy Status: ${occupancy.is_occupied ? 'Occupied' : 'Unoccupied'}</p>
+                        <p>Schedule: ${occupancy.schedule.start} - ${occupancy.schedule.end}</p>
+                    `;
+                    document.getElementById('occupancy-status').innerHTML = occupancyHtml;
+                }
+            } catch (error) {
+                console.error('Error fetching occupancy data:', error);
+            }
+        }
+    </script>
     <div class="button-container">
         {% if user_logged_in %}
-            <p>Welcome, you are currently logged in.</p>
-            <a href="/schedule" class="link">View Schedule</a>
-            <a href="/manage-schedule" class="link">Manage Schedule</a>
-            <a href="/logout" class="link">Logout</a>
+        <p>Welcome, you are currently logged in.</p>
+        <a href="/schedule" class="link">View Schedule</a>
+        <a href="/manage-schedule" class="link">Manage Schedule</a>
+        <a href="/logout" class="link">Logout</a>
         {% else %}
-            <a href="/login" class="link">Login</a>
+        <a href="/login" class="link">Login</a>
         {% endif %}
     </div>
 

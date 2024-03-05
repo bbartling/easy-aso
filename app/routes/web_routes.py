@@ -1,10 +1,8 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Request, Form, Response
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-
 from app.models.models import WritePropertyRequest
-from app.utils.global_variables import check_occupancy_status
 
 
 """
@@ -181,7 +179,7 @@ def setup_routes(app: FastAPI, bacnet_app):
 
     @app.get("/occupancy")
     async def check_occupancy():
-        occupancy_status = await check_occupancy_status(bacnet_app.in_memory_schedule)
+        occupancy_status = await bacnet_app.check_occupancy_status()
 
         return JSONResponse(
             content={

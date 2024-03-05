@@ -1,15 +1,23 @@
 from __future__ import annotations
 
+from app.config import setup_logging
+
+# Set up application-wide logging configuration at the very beginning
+setup_logging()
+
 import asyncio
 import re
-
+import logging
+import time
+import datetime
+import random
 import os
 import json
 from typing import Optional, Union
 
-from fastapi import FastAPI, Depends, HTTPException, status, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import FastAPI, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional
@@ -18,15 +26,13 @@ from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
 import secrets
 
-from bacpypes3.debugging import ModuleLogger
 from bacpypes3.argparse import SimpleArgumentParser
-
 from bacpypes3.pdu import Address, GlobalBroadcast
 from bacpypes3.primitivedata import Atomic, ObjectIdentifier
 from bacpypes3.constructeddata import Sequence, AnyAtomic, Array, List
 from bacpypes3.apdu import ErrorRejectAbortNack
 from bacpypes3.app import Application
-from bacpypes3.primitivedata import Null, CharacterString, ObjectIdentifier
+from bacpypes3.primitivedata import Null, ObjectIdentifier
 
 # for serializing the configuration
 from bacpypes3.settings import settings
@@ -36,25 +42,25 @@ from bacpypes3.json.util import (
     extendedlist_to_json_list,
 )
 
-from bacpypes3.debugging import ModuleLogger
 from bacpypes3.argparse import SimpleArgumentParser
 from bacpypes3.app import Application
 from bacpypes3.local.analog import AnalogValueObject
 from bacpypes3.local.binary import BinaryValueObject
-from bacpypes3.local.cmd import Commandable
 
 from app.routes.web_routes import setup_routes
-from app.utils.global_variables import check_occupancy_status, get_outside_air_temp
+
 
 # $ python main.py --tls
 
 
 # Set up logging
 _debug = 0
-_log = ModuleLogger(globals())
 
-# bacnet server update BACNET_SERVER_UPDATE_INTERVAL
-BACNET_SERVER_UPDATE_INTERVAL = 1.0
+# Create a logger for this module
+_log = logging.getLogger(__name__)
+
+# bacnet server update GLOBAL_VAR_UPDATE_INTERVAL
+GLOBAL_VAR_UPDATE_INTERVAL = 1.0
 
 
 class FreeBasApplication:
@@ -68,6 +74,12 @@ class FreeBasApplication:
 
         self.outside_air_temp = outside_air_temp
         self.bacnet_app.add_object(outside_air_temp)
+        
+        # BACnet global vars for BAS
+        self.global_vars_last_update_time = 0
+        self.global_vars_update_interval = 60
+        self.global_current_outside_temperature = -555.
+        self.global_occupied_bool = False
 
         self.web_app = FastAPI()
 
@@ -88,6 +100,15 @@ class FreeBasApplication:
         secret_key = secrets.token_urlsafe(32)
 
         self.web_app.add_middleware(SessionMiddleware, secret_key=secret_key)
+
+        self.web_app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],  # Allows all origins
+            allow_credentials=True,
+            allow_methods=["*"],  # Allows all methods
+            allow_headers=["*"],  # Allows all headers
+        )
+
         self.web_app.mount(
             "/static", StaticFiles(directory="app/static"), name="static"
         )
@@ -107,7 +128,8 @@ class FreeBasApplication:
         self.in_memory_schedule = self.load_schedule()
 
         # create a task to update the values of the BACnet server
-        asyncio.create_task(self.update_values())
+        asyncio.create_task(self.check_global_vars())
+        
 
     # for FASTapi web app
     async def start_server(self, host="0.0.0.0", port=8000, log_level="info"):
@@ -161,10 +183,10 @@ class FreeBasApplication:
             )
             with open(schedule_path, "r") as file:
                 schedule = json.load(file)
-                print("Schedule loaded: \n", schedule)
+                _log.debug("Schedule loaded: \n", schedule)
                 return schedule
         except FileNotFoundError:
-            print("Error loading default schedule!")
+            _log.error("Error loading default schedule!")
             return {}  # Or return an empty dict
         
     def save_schedule(self, schedule_data):
@@ -176,40 +198,76 @@ class FreeBasApplication:
             )
             with open(schedule_path, "w") as file:
                 json.dump(schedule_data, file, indent=4)
-            print("Schedule successfully updated and saved.")
+            _log.debug("Schedule successfully updated and saved.")
         except Exception as e:
             # Handle potential errors, perhaps logging them or notifying an admin
-            print(f"Failed to save the updated schedule: {e}")
+            _log.error(f"Failed to save the updated schedule: {e}")
 
-    # update BACnet server
-    async def update_values(self):
+
+    async def check_global_vars(self):
         while True:
-            await asyncio.sleep(BACNET_SERVER_UPDATE_INTERVAL)
-
-            # Initialize default values
-            occ_str = "inactive"  # Default occupancy status
-            out_temp_float = -555.5  # Default outside temperature
+            await asyncio.sleep(GLOBAL_VAR_UPDATE_INTERVAL)
 
             try:
                 # Check occupancy status
-                occ_bool = await check_occupancy_status(self.in_memory_schedule)
-                if occ_bool["is_occupied"]:
-                    occ_str = "active"
-                else:
-                    occ_str = "inactive"
+                occ_status = await self.check_occupancy_status()
+                current_occ_bool = occ_status["is_occupied"]
+
+                # Compare with the previous state and update only if different
+                if current_occ_bool != self.global_occupied_bool:
+                    # State has changed, update global tracking variable
+                    self.global_occupied_bool = current_occ_bool
+
+                    # Convert boolean to string as required by your server
+                    occ_str = "active" if current_occ_bool else "inactive"
+                    
+                    # Update bacpypes3 bacnet server value
+                    self.building_occ.presentValue = occ_str
+
             except Exception as e:
-                print(f"Error checking occupancy status: {e}")
+                _log.error(f"Error checking occupancy status: {e}")
 
             try:
-                # Get outside temperature
-                out_temp_float = await get_outside_air_temp()
-
+                await self.update_outside_air_temp()
             except Exception as e:
-                print(f"Error getting outside air temperature: {e}")
+                _log.error(f"Error getting outside air temperature: {e}")
 
-            # Update values
-            self.outside_air_temp.presentValue = out_temp_float
-            self.building_occ.presentValue = occ_str
+
+    async def update_outside_air_temp(self):
+        current_time = time.time()
+
+        # Check if more than 60 seconds have passed since the last update
+        if current_time - self.global_vars_last_update_time > self.global_vars_update_interval:
+            
+            await asyncio.sleep(0.01) # simulate API call
+            current_temperature = random.uniform(50, 100)
+
+            # Check if the temperature change is greater than 0.1 degrees
+            if abs(current_temperature - self.global_current_outside_temperature) > 0.1:
+                self.global_vars_last_update_time = current_time
+                self.global_current_outside_temperature = current_temperature
+                
+                # update bacpypes3 bacnet server value
+                self.outside_air_temp.presentValue = current_temperature
+
+
+    async def check_occupancy_status(self):
+        now = datetime.datetime.now()
+        current_day = now.strftime("%A")
+        current_time = now.strftime("%H:%M")
+        todays_schedule = self.in_memory_schedule.get(current_day, {"start": None, "end": None})
+
+        is_occupied = False
+        if todays_schedule["start"] and todays_schedule["end"]:
+            is_occupied = todays_schedule["start"] <= current_time < todays_schedule["end"]
+        
+        return {
+            "current_time": current_time,
+            "current_day": current_day,
+            "is_occupied": is_occupied,
+            "schedule": todays_schedule,
+        }
+
 
     async def _read_property(
         self, device_instance: int, object_identifier: str, property_identifier: str
@@ -423,6 +481,11 @@ class FreeBasApplication:
         return await self._write_property(
             device_instance, object_identifier, property_identifier, value, priority
         )
+
+
+
+
+
 
 
 async def main():
