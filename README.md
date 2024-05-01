@@ -1,5 +1,7 @@
 # FreeBAS
 
+**Warbubg this is an UNFINISHED CONCEPT IDEA...** But feel free to nudge me...
+
 FreeBAS stands as an innovative, free, and open-source Building Automation System (BAS) server, designed by a former BAS technician for HVAC control applications. This app is designed to run behind the firewall on the intranet (not cloud) of a larger commercial type building which is typical to any Operations Technology (OT). The core mission is to empower the industry by enabling the cost-free setup of buildings with essential BAS functionalities including advanced alarming, supervisory level logic, and easily discoverable BACnet server properties. Other functionalities which are typical to a BAS server include global variables for the operation of the mechanical system like building occupancy and outdoor air temperature, all managed with the elegance and power of Python.
 
 A key ambition of FreeBAS is to embrace the advanced ontologies of the Brick schema, showcasing a forward-thinking approach to how data is populated and retrieved from the BACnet system. Hopefully this strategic integration using meta data in the BAS heralds a new era of intuitive, efficient, and scalable building management system architecture.
