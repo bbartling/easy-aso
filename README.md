@@ -8,7 +8,8 @@ TODO's
 
 ### In Progress
  - [X] Overhall app code with bacpypes3
- - [ ] Test out the app code on a test bench scenorio
+ - [ ] Test out basic functionality on a test bench scenorio with another fake BACnet app to simulate a fake AHU system and VAVs
+ - [ ] Create unit tests for generic supervisory processes in BAS contracting like OA-Temp share and Occupancy Scheduling
  - [ ] Publish the project as a Python library on PyPI
  - [ ] Incorporate an alarm dial out feature in a creative Pythonic setup
 

@@ -192,7 +192,6 @@ class SampleCmd(Cmd):
         if _debug:
             _log.debug(f"Configuration for device {instance_id} saved to {filename}")
 
-
     async def do_point_discovery(
         self,
         instance_id: Optional[int] = None,
@@ -299,9 +298,7 @@ class SampleCmd(Cmd):
                 names_list.append("ERROR - Delete this row")
 
             except ErrorRejectAbortNack as err:
-                _log.error(
-                    f"{object_identifier} {object_identifier} error: {err}\n"
-                )
+                _log.error(f"{object_identifier} {object_identifier} error: {err}\n")
 
         if _debug:
             _log.debug("    - object_list: %r", object_list)
@@ -325,8 +322,8 @@ class SampleCmd(Cmd):
             if _debug:
                 _log.debug("    - property_list: %r", property_list)
         except ErrorRejectAbortNack as err:
-            
-                _log.error(f"{object_identifier} property-list error: {err}\n")
+
+            _log.error(f"{object_identifier} property-list error: {err}\n")
 
         for object_identifier in property_list:
 
@@ -357,7 +354,7 @@ class SampleCmd(Cmd):
 
     async def do_discover_devices_in_range(self, start_id: int, end_id: int):
         """
-        Discover devices in a range of BACnet instance IDs, retrieve points, 
+        Discover devices in a range of BACnet instance IDs, retrieve points,
         check priority arrays, and save the data to files.
         """
         for instance_id in range(start_id, end_id + 1):
@@ -365,7 +362,9 @@ class SampleCmd(Cmd):
 
             # Discover points for the device
             try:
-                device_address, object_list, names_list = await self.do_point_discovery(instance_id)
+                device_address, object_list, names_list = await self.do_point_discovery(
+                    instance_id
+                )
                 if not object_list:
                     print(f"No points found for device {instance_id}")
                     continue
@@ -376,23 +375,27 @@ class SampleCmd(Cmd):
                 device_data = {
                     "device_id": instance_id,
                     "address": str(device_address),
-                    "points": []
+                    "points": [],
                 }
 
                 # Loop through each point and read priority array
                 for index, (obj_type, obj_id) in enumerate(object_list):
                     object_identifier = f"{obj_type},{obj_id}"
                     point_name = names_list[index]
-                    print(f"Checking priority array for point {object_identifier} ({point_name})")
+                    print(
+                        f"Checking priority array for point {object_identifier} ({point_name})"
+                    )
 
                     # Read the priority array of the point
-                    priority_array = await self.do_read_point_priority_arr(device_address, object_identifier)
+                    priority_array = await self.do_read_point_priority_arr(
+                        device_address, object_identifier
+                    )
 
                     # Add point data to the structure
                     point_data = {
                         "object_identifier": object_identifier,
                         "object_name": point_name,
-                        "priority_array": priority_array
+                        "priority_array": priority_array,
                     }
                     device_data["points"].append(point_data)
 

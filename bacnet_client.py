@@ -5,7 +5,10 @@ from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import ObjectIdentifier, Null
 from bacpypes3.constructeddata import Sequence, Array, List as BacpypesList
 from bacpypes3.apdu import ErrorRejectAbortNack
-from bacpypes3.json.util import sequence_to_json, extendedlist_to_json_list  # Importing from BACpypes3
+from bacpypes3.json.util import (
+    sequence_to_json,
+    extendedlist_to_json_list,
+)  # Importing from BACpypes3
 
 from models import (
     WritePropertyRequest,
@@ -13,7 +16,7 @@ from models import (
     DeviceInstanceValidator,
     nan_or_inf_check,
     ReadMultiplePropertiesRequestWrapper,
-    DeviceInstanceRange
+    DeviceInstanceRange,
 )
 from pydantic import ValidationError
 
@@ -23,20 +26,22 @@ _log = ModuleLogger(globals())
 class BACnetClient:
     def __init__(self):
         self.service = None
-    
+
     @asynccontextmanager
     async def manage_bacnet_service(self):
         self.service = Application()
         yield
-    
+
     async def get_device_address(self, device_instance: int) -> Address:
         # Validate device instance using Pydantic model
         try:
             DeviceInstanceValidator(device_instance=device_instance)
         except ValidationError as e:
             raise ValueError(f"Invalid device instance: {e}")
-        
-        device_info = self.service.device_info_cache.instance_cache.get(device_instance, None)
+
+        device_info = self.service.device_info_cache.instance_cache.get(
+            device_instance, None
+        )
         if device_info:
             device_address = device_info.device_address
             _log.debug(f" gda - Cached address: {device_address}")
@@ -50,18 +55,20 @@ class BACnetClient:
             _log.debug(f" gda - Resolved address: {device_address}")
         return device_address
 
-    async def read_property(self, device_instance: int, object_identifier: str, property_identifier: str):
+    async def read_property(
+        self, device_instance: int, object_identifier: str, property_identifier: str
+    ):
         # Validate using Pydantic model before proceeding
         try:
             WritePropertyRequest(
                 device_instance=device_instance,
                 object_identifier=object_identifier,
                 property_identifier=property_identifier,
-                value=None  # value is not needed for read
+                value=None,  # value is not needed for read
             )
         except ValidationError as e:
             raise ValueError(f"Invalid read request: {e}")
-        
+
         device_address = await self.get_device_address(device_instance)
 
         try:
@@ -81,7 +88,14 @@ class BACnetClient:
         encoded_value = nan_or_inf_check(encoded_value)
         return encoded_value
 
-    async def write_property(self, device_instance: int, object_identifier: str, property_identifier: str, value: str, priority: int = -1):
+    async def write_property(
+        self,
+        device_instance: int,
+        object_identifier: str,
+        property_identifier: str,
+        value: str,
+        priority: int = -1,
+    ):
         # Validate using Pydantic model before proceeding
         try:
             WritePropertyRequest(
@@ -89,11 +103,11 @@ class BACnetClient:
                 object_identifier=object_identifier,
                 property_identifier=property_identifier,
                 value=value,
-                priority=priority
+                priority=priority,
             )
         except ValidationError as e:
             raise ValueError(f"Invalid write request: {e}")
-        
+
         device_address = await self.get_device_address(device_instance)
 
         if value == "null":
@@ -122,7 +136,9 @@ class BACnetClient:
     async def perform_who_is(self, start_instance: int, end_instance: int):
         # Validate device instance range using Pydantic
         try:
-            DeviceInstanceRange(start_instance=start_instance, end_instance=end_instance)
+            DeviceInstanceRange(
+                start_instance=start_instance, end_instance=end_instance
+            )
         except ValidationError as e:
             raise ValueError(f"Invalid device instance range: {e}")
 
@@ -130,7 +146,7 @@ class BACnetClient:
             i_ams = await self.service.who_is(start_instance, end_instance)
             if not i_ams:
                 return f"No response for WhoIs from {start_instance} to {end_instance}"
-            
+
             result = []
             for i_am in i_ams:
                 device_address: Address = i_am.pduSource
@@ -143,12 +159,14 @@ class BACnetClient:
                 except ErrorRejectAbortNack as err:
                     device_description = f"Error: {err}"
 
-                result.append({
-                    "device_identifier": f"{device_identifier}",
-                    "device_address": f"{device_address}",
-                    "device_description": device_description,
-                    "vendor_id": i_am.vendorID,
-                })
+                result.append(
+                    {
+                        "device_identifier": f"{device_identifier}",
+                        "device_address": f"{device_address}",
+                        "device_description": device_description,
+                        "vendor_id": i_am.vendorID,
+                    }
+                )
             return result
         except Exception as e:
             _log.error(f"Exception in perform_who_is: {e}")
@@ -170,7 +188,9 @@ class BACnetClient:
             device_address: Address = i_am.pduSource
             device_identifier: ObjectIdentifier = i_am.iAmDeviceIdentifier
 
-            object_list = await self.service.read_property(device_address, device_identifier, "object-list")
+            object_list = await self.service.read_property(
+                device_address, device_identifier, "object-list"
+            )
             if isinstance(object_list, str) and "no object class" in object_list:
                 object_list_length = await self.service.read_property(
                     device_address,
@@ -204,21 +224,27 @@ class BACnetClient:
             _log.error(f"Unexpected error during point discovery: {e}")
             raise e
 
-    async def read_multiple_properties(self, device_instance: int, requests: list[ReadMultiplePropertiesRequest]):
+    async def read_multiple_properties(
+        self, device_instance: int, requests: list[ReadMultiplePropertiesRequest]
+    ):
         # Validate the input using Pydantic wrapper model
         try:
             ReadMultiplePropertiesRequestWrapper(
-                device_instance=device_instance,
-                requests=requests
+                device_instance=device_instance, requests=requests
             )
         except ValidationError as e:
             raise ValueError(f"Invalid read multiple properties request: {e}")
-        
+
         device_address = await self.get_device_address(device_instance)
-        property_requests = [(ObjectIdentifier(req.object_identifier), req.property_identifier) for req in requests]
+        property_requests = [
+            (ObjectIdentifier(req.object_identifier), req.property_identifier)
+            for req in requests
+        ]
 
         try:
-            result = await self.service.read_property_multiple(device_address, property_requests)
+            result = await self.service.read_property_multiple(
+                device_address, property_requests
+            )
             return result
         except Exception as e:
             _log.error(f"Exception during read multiple properties: {e}")

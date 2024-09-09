@@ -2,6 +2,7 @@
 from bacnet_client import BACnetClient
 from models import ReadMultiplePropertiesRequest
 
+
 async def run_bacnet_operations():
     client = BACnetClient()
 
@@ -13,11 +14,15 @@ async def run_bacnet_operations():
         value = 50.0
 
         # Perform read
-        read_result = await client.read_property(device_instance, object_identifier, property_identifier)
+        read_result = await client.read_property(
+            device_instance, object_identifier, property_identifier
+        )
         print(f"Read result: {read_result}")
 
         # Perform write
-        write_result = await client.write_property(device_instance, object_identifier, property_identifier, value)
+        write_result = await client.write_property(
+            device_instance, object_identifier, property_identifier, value
+        )
         print(f"Write result: {write_result}")
 
         # Perform WhoIs
@@ -30,16 +35,24 @@ async def run_bacnet_operations():
 
         # Perform BACnet read multiple
         read_multiple_requests = [
-            ReadMultiplePropertiesRequest(object_identifier="analog-input,1", property_identifier="present-value"),
-            ReadMultiplePropertiesRequest(object_identifier="analog-output,2", property_identifier="description")
+            ReadMultiplePropertiesRequest(
+                object_identifier="analog-input,1", property_identifier="present-value"
+            ),
+            ReadMultiplePropertiesRequest(
+                object_identifier="analog-output,2", property_identifier="description"
+            ),
         ]
-        read_multiple_result = await client.read_multiple_properties(device_instance, read_multiple_requests)
+        read_multiple_result = await client.read_multiple_properties(
+            device_instance, read_multiple_requests
+        )
         print(f"Read multiple properties result: {read_multiple_result}")
 
         # Perform WhoIs range
         who_is_range_result = await client.who_is_range(1000, 1500)
         print(f"WhoIs range result: {who_is_range_result}")
 
+
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(run_bacnet_operations())
