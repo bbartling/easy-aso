@@ -7,8 +7,10 @@ Why cant a BAS be free?
 TODO's
 
 ### In Progress
- - [ ] Overhall app code with bacpypes3
+ - [X] Overhall app code with bacpypes3
+ - [ ] Test out the app code on a test bench scenorio
  - [ ] Publish the project as a Python library on PyPI
+ - [ ] Incorporate an alarm dial out feature in a creative Pythonic setup
 
 
 ## License:

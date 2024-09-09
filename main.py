@@ -1,74 +1,45 @@
-import BAC0
-import time
-from datetime import datetime
+# main.py
+from bacnet_client import BACnetClient
+from models import ReadMultiplePropertiesRequest
 
-# Initialize BACnet
-bacnet = BAC0.lite()
+async def run_bacnet_operations():
+    client = BACnetClient()
 
-# Define constants
-BUILDING_STARTUP = "08:00"
-BUILDING_SHUTDOWN = "18:00"
+    async with client.manage_bacnet_service():
+        # Example read and write logic
+        device_instance = 12345
+        object_identifier = "analog-input,2"
+        property_identifier = "present-value"
+        value = 50.0
 
-# Boiler and AHU details
-BOILER_IP = "192.168.0.102/24"
-AHU_IP = "192.168.0.103/24"
-BOILER_OUTSIDE_AIR_SENSOR = "analogInput 3 presentValue"
-AHU_OUTSIDE_AIR_VALUE = "analogValue 10 presentValue"
+        # Perform read
+        read_result = await client.read_property(device_instance, object_identifier, property_identifier)
+        print(f"Read result: {read_result}")
 
-# VAV box addresses on MSTP trunk 100
-vav_addresses = [
-    "100:1",
-    "100:2",
-    "100:3",
-    "100:4",
-    "100:5",
-    "100:6",
-    "100:7",
-    "100:8",
-    "100:9",
-    "100:10",
-]
+        # Perform write
+        write_result = await client.write_property(device_instance, object_identifier, property_identifier, value)
+        print(f"Write result: {write_result}")
 
-# Define zone temperature setpoints
-unoccupied_heat_setpoint = 55.0
-unoccupied_cool_setpoint = 90.0
-occupied_heat_setpoint = 70.0
-occupied_cool_setpoint = 75.0
+        # Perform WhoIs
+        who_is_result = await client.perform_who_is(1000, 5000)
+        print(f"WhoIs result: {who_is_result}")
 
+        # Perform point discovery
+        point_discovery_result = await client.point_discovery(device_instance)
+        print(f"Point discovery result: {point_discovery_result}")
 
-# Function to check if building is occupied
-def is_occupied():
-    current_time = datetime.now().time()
-    occupied_start = datetime.strptime(BUILDING_STARTUP, "%H:%M").time()
-    occupied_end = datetime.strptime(BUILDING_SHUTDOWN, "%H:%M").time()
-    return occupied_start <= current_time <= occupied_end
+        # Perform BACnet read multiple
+        read_multiple_requests = [
+            ReadMultiplePropertiesRequest(object_identifier="analog-input,1", property_identifier="present-value"),
+            ReadMultiplePropertiesRequest(object_identifier="analog-output,2", property_identifier="description")
+        ]
+        read_multiple_result = await client.read_multiple_properties(device_instance, read_multiple_requests)
+        print(f"Read multiple properties result: {read_multiple_result}")
 
+        # Perform WhoIs range
+        who_is_range_result = await client.who_is_range(1000, 1500)
+        print(f"WhoIs range result: {who_is_range_result}")
 
-# Main loop for supervisory control
-while True:
-    if is_occupied():
-        heat_setpoint = occupied_heat_setpoint
-        cool_setpoint = occupied_cool_setpoint
-    else:
-        heat_setpoint = unoccupied_heat_setpoint
-        cool_setpoint = unoccupied_cool_setpoint
-
-    # Write temperature setpoints to each VAV
-    for address in vav_addresses:
-        write_heat = f"{address} analogValue 1 presentValue {heat_setpoint}"
-        bacnet.write(write_heat)
-
-        write_cool = f"{address} analogValue 2 presentValue {cool_setpoint}"
-        bacnet.write(write_cool)
-
-    # Read outside air temperature from the boiler
-    outside_air_temp = bacnet.read(f"{BOILER_IP} {BOILER_OUTSIDE_AIR_SENSOR}")
-
-    # Write the outside air temperature to the AHU controller
-    bacnet.write(f"{AHU_IP} {AHU_OUTSIDE_AIR_VALUE} {outside_air_temp}")
-
-    # Sleep for 1 minute
-    time.sleep(60)
-
-# Clean up BACnet connection
-bacnet.disconnect()
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(run_bacnet_operations())
