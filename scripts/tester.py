@@ -1,56 +1,3 @@
-"""
-I may expand on this so lets say this one is v0.0.1
-
-Bring up the bacpypes3 console with debug
-$ python3 tester.py --debug
-
-run on static IP for UDP port 47820 with passing in Address arg
-$ python3 tester.py --address 10.7.6.201/24:47820 --debug
-
-See all available commands
-> help
-
-save BACnet device yaml config file
-pass in the BACnet instance ID
-> do_save_device_config 201201
-
-discover points on device 201201
-> point_discovery 792000
-
-read priority arr of a point
-> read_point_priority_arr 32:18 analog-value,13
-
-test a read of a sensor
-> read 10.7.6.161/24:47820 analog-value,99 present-value
-> read 32:18 analog-value,14 present-value 
-
-test a write of a point and a release on priority 10
-> write 32:18 analog-value,14 present-value null 10
-> write 32:18 analog-value,14 present-value 72.0 10
-> write 32:18 analog-output,2 present-value null 10
-> write 32:18 analog-output,2 present-value 0.0 10
-
-test whois on MSTP devices 2 and 6 on network 12345 with inst hi and low
-test whois global with the * 
-> whois 12345:2 1 999999
-> whois 12345:6 1 999999
-> whois 10.7.6.161/24:47820 792000
-
-test whohas
-> whohas analog-value,302 12345:2
-> whohas analog-value,302 *
-> whohas 1 2345 analog-value,302
-> whohas analog-value,302 10.7.6.161/24:47820
-> whohas "ZN-T"
-
-test read multiple
-> rpm 12345:2 analog-input,2 present-value analog-value,301 present-value
-> rpm 10.7.6.161/24:47820 analog-value,99 present-value analog-value,1 present-value
-
-discover networks in the building
-> who_is_router_to_network
-"""
-
 import os
 import asyncio
 import re
@@ -352,19 +299,32 @@ class SampleCmd(Cmd):
             except Exception as e:
                 _log.error(f"Other error while doing operation: {e}")
 
-    async def do_discover_devices_in_range(self, start_id: int, end_id: int):
+
+    def supports_priority_array(self, obj_type: str) -> bool:
+        """
+        Check if the given object type supports the priority array.
+        Only certain object types, such as AO, BO, AV, BV, and multi-state output, support priority arrays.
+        """
+        return obj_type in {
+            "analogOutput",
+            "binaryOutput",
+            "analogValue",
+            "binaryValue",
+            "multiStateOutput",
+            "multiStateValue",
+        }
+
+    async def do_supervisory_logic_checks(self, start_id: int, end_id: int):
         """
         Discover devices in a range of BACnet instance IDs, retrieve points,
-        check priority arrays, and save the data to files.
+        check priority arrays (if supported), and save the data to files.
         """
         for instance_id in range(start_id, end_id + 1):
             print(f"Discovering device {instance_id}...")
 
             # Discover points for the device
             try:
-                device_address, object_list, names_list = await self.do_point_discovery(
-                    instance_id
-                )
+                device_address, object_list, names_list = await self.do_point_discovery(instance_id)
                 if not object_list:
                     print(f"No points found for device {instance_id}")
                     continue
@@ -378,26 +338,34 @@ class SampleCmd(Cmd):
                     "points": [],
                 }
 
-                # Loop through each point and read priority array
+                # Loop through each point and read priority array (if supported)
                 for index, (obj_type, obj_id) in enumerate(object_list):
                     object_identifier = f"{obj_type},{obj_id}"
                     point_name = names_list[index]
-                    print(
-                        f"Checking priority array for point {object_identifier} ({point_name})"
-                    )
+                    print(f"Checking if {object_identifier} ({point_name}) supports priority array")
 
-                    # Read the priority array of the point
-                    priority_array = await self.do_read_point_priority_arr(
-                        device_address, object_identifier
-                    )
+                    # Check if the object type supports priority arrays
+                    if self.supports_priority_array(obj_type):
+                        print(f"Reading priority array for point {object_identifier} ({point_name})")
 
-                    # Add point data to the structure
-                    point_data = {
-                        "object_identifier": object_identifier,
-                        "object_name": point_name,
-                        "priority_array": priority_array,
-                    }
-                    device_data["points"].append(point_data)
+                        try:
+                            priority_array = await self.do_read_point_priority_arr(
+                                device_address, object_identifier
+                            )
+
+                            # Add point data to the structure
+                            point_data = {
+                                "object_identifier": object_identifier,
+                                "object_name": point_name,
+                                "priority_array": priority_array,
+                            }
+                            device_data["points"].append(point_data)
+
+                        except Exception as e:
+                            print(f"Failed to read priority array for {object_identifier}: {e}")
+                            continue
+                    else:
+                        print(f"Skipping read-only point {object_identifier} ({point_name})")
 
                 # Save the device data to a file
                 filename = f"device_{instance_id}_data.yaml"
@@ -409,6 +377,7 @@ class SampleCmd(Cmd):
             except Exception as e:
                 print(f"Error discovering device {instance_id}: {e}")
                 continue
+
 
     async def do_read_point_priority_arr(
         self,
