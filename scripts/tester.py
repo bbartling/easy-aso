@@ -1,16 +1,12 @@
 import os
 import asyncio
 import re
-from collections import OrderedDict
 import yaml
 from typing import Callable, List, Any, Optional, Tuple
 
 
-from bacpypes3.pdu import Address, IPv4Address
+from bacpypes3.pdu import Address
 from bacpypes3.comm import bind
-
-from bacpypes3.primitivedata import Integer
-from bacpypes3.basetypes import PriorityValue
 import bacpypes3
 
 from bacpypes3.debugging import bacpypes_debugging, ModuleLogger
@@ -18,7 +14,7 @@ from bacpypes3.argparse import SimpleArgumentParser
 from bacpypes3.app import Application
 from bacpypes3.console import Console
 from bacpypes3.cmd import Cmd
-from bacpypes3.primitivedata import Null, CharacterString, ObjectIdentifier
+from bacpypes3.primitivedata import Null, ObjectIdentifier
 from bacpypes3.npdu import IAmRouterToNetwork
 from bacpypes3.comm import bind
 from typing import Callable, Optional, List
@@ -35,14 +31,12 @@ from bacpypes3.apdu import AbortReason, AbortPDU, ErrorRejectAbortNack
 from bacpypes3.netservice import NetworkAdapter
 
 # for BVLL services
-from bacpypes3.ipv4.bvll import Result as IPv4BVLLResult
-from bacpypes3.ipv4.service import BVLLServiceAccessPoint, BVLLServiceElement
+from bacpypes3.ipv4.service import BVLLServiceElement
 
 from enum import Enum
 
 # some debugging
 _debug = 0
-_log = ModuleLogger(globals())
 
 # 'property[index]' matching
 property_index_re = re.compile(r"^([A-Za-z-]+)(?:\[([0-9]+)\])?$")
@@ -69,63 +63,62 @@ class SampleCmd(Cmd):
 
     _debug: Callable[..., None]
 
+
     async def do_save_device_yaml_config(self, instance_id: int, filename=None):
         """
-        For python bacnet-csv-logger
         Save the discovered points to a YAML file, named based on the instance ID,
         including the device name for the device identifier entry.
         If the device name is not found, default to the instance ID as a string.
         """
+        # Create the configs directory if it doesn't exist
         config_dir = "configs"
         os.makedirs(config_dir, exist_ok=True)
 
+        # If no filename is provided, create a default one
         if filename is None:
             filename = f"{config_dir}/bacnet_config_{instance_id}.yaml"
 
-        device_address, object_list, names_list = await self.do_point_discovery(
-            instance_id
-        )
+        # Discover points for the device
+        device_address, object_list, names_list = await self.do_point_discovery(instance_id)
         if not object_list:
+            print(f"No points discovered for device {instance_id}, skipping file save.")
             return
 
-        if _debug:
-            _log.debug(f" device_address {device_address}")
-            _log.debug(f" len object_list {len(object_list)}")
-            _log.debug(f" len names_list {len(names_list)}")
+        print(f"Device address: {device_address}")
+        print(f"Number of objects discovered: {len(object_list)}")
+        print(f"Number of names discovered: {len(names_list)}")
 
         # Combine object_list and names_list into a single structure
         points_data = []
-        device_name = str(instance_id)  # Default to instance_id as string
+        device_name = str(instance_id)  # Default to instance_id as the device name
 
+        # Loop through the object list and associate with names
         for index, (obj_type, obj_id) in enumerate(object_list):
-            if _debug:
-                _log.debug(f"index {index}")
-                _log.debug(f"obj_type, obj_id {obj_type}, {obj_id}")
-
             name = names_list[index]
+            print(f"Processing object {index + 1}: {obj_type}, {obj_id} - Name: {name}")
+
+            # Create point data dictionary
             point_data = {
                 "object_identifier": f"{obj_type},{obj_id}",
                 "object_name": name,
             }
             points_data.append(point_data)
 
-            # Update the comparison to match the actual data types
-            if isinstance(
-                obj_type, Enum
-            ):  # Replace 'Enum' with the actual type of obj_type, if necessary
-                type_name = obj_type.name  # Or use the appropriate attribute/method
+            # Update the device_name if it's a device object
+            if isinstance(obj_type, Enum):  # Ensure obj_type is an Enum, if applicable
+                type_name = obj_type.name  # Retrieve the name of the Enum member
             else:
                 type_name = str(obj_type)
 
             if type_name == "device" and obj_id == instance_id:
-                device_name = name
-                continue
+                device_name = name  # Update the device name
 
+        # Prepare the configuration data for the device
         config_data = {
             "devices": [
                 {
                     "device_identifier": str(instance_id),
-                    "device_name": device_name,  # Add device name or instance_id here
+                    "device_name": device_name,  # Use the found device name or instance_id
                     "address": str(device_address),
                     "scrape_interval": 60,  # Default value
                     "read_multiple": True,  # Default value
@@ -134,11 +127,12 @@ class SampleCmd(Cmd):
             ],
         }
 
+        # Save the configuration to a YAML file
         with open(filename, "w") as file:
             yaml.dump(config_data, file, default_flow_style=False)
 
-        if _debug:
-            _log.debug(f"Configuration for device {instance_id} saved to {filename}")
+        print(f"Configuration for device {instance_id} saved to {filename}")
+
 
     async def do_point_discovery(
         self,
@@ -148,9 +142,11 @@ class SampleCmd(Cmd):
         Read the entire object list from a device at once, or if that fails, read
         the object identifiers one at a time.
         """
+        # Perform the who-is operation and get the response
         i_ams = await app.who_is(instance_id, instance_id)
         if not i_ams:
-            return None, [], []  # Return empty values instead of None
+            print(f"No response from device {instance_id}.")
+            return None, [], []  # Return empty values if no response is found
 
         i_am = i_ams[0]
         device_address: Address = i_am.pduSource
@@ -160,25 +156,30 @@ class SampleCmd(Cmd):
         object_list = []
         names_list = []
 
+        print(f"Device address: {device_address}")
+
+        # Try reading the object-list property
         try:
             object_list = await app.read_property(
                 device_address, device_identifier, "object-list"
             )
+            print(f"Successfully read object list from {device_identifier}")
         except AbortPDU as err:
             if err.apduAbortRejectReason != AbortReason.segmentationNotSupported:
-                _log.error(f"{device_identifier} object-list abort: {err}")
-            return device_address, [], []
-
+                print(f"Error reading object-list for {device_identifier}: {err}")
+            return device_address, [], []  # Return empty if object-list read fails
         except ErrorRejectAbortNack as err:
-            _log.error(f"{device_identifier} object-list error/reject: {err}")
+            print(f"Error/reject reading object-list for {device_identifier}: {err}")
             return device_address, [], []
 
+        # If the object list is empty, attempt to read it one by one
         if not object_list:
-            # Attempt reading object list one by one
             try:
                 object_list_length = await app.read_property(
                     device_address, device_identifier, "object-list", array_index=0
                 )
+                print(f"Object list length: {object_list_length}")
+
                 for i in range(object_list_length):
                     object_identifier = await app.read_property(
                         device_address,
@@ -186,79 +187,35 @@ class SampleCmd(Cmd):
                         "object-list",
                         array_index=i + 1,
                     )
+                    print(f"Object identifier {i+1}: {object_identifier}")
                     object_list.append(object_identifier)
 
             except ErrorRejectAbortNack as err:
-                _log.error(f"{device_identifier} object-list length error/reject: {err}")
+                print(f"Error/reject reading object-list length for {device_identifier}: {err}")
                 return device_address, [], []
 
-        # Now handle names (as your original method)
+        # Try reading the object names
         for object_identifier in object_list:
             object_class = vendor_info.get_object_class(object_identifier[0])
             if object_class is None:
-                _log.error(f"unknown object type: {object_identifier}")
+                print(f"Unknown object type for {object_identifier}, skipping...")
                 continue
 
             try:
                 property_value = await app.read_property(
                     device_address, object_identifier, "object-name"
                 )
+                print(f"Object: {object_identifier} - Name: {property_value}")
                 names_list.append(str(property_value))
             except bacpypes3.errors.InvalidTag as err:
-                _log.error(f"Invalid Tag Error on point: {device_identifier}")
+                print(f"Invalid tag error on point {device_identifier}. Adding placeholder.")
                 names_list.append("ERROR - Delete this row")
             except ErrorRejectAbortNack as err:
-                _log.error(f"{object_identifier} {object_identifier} error: {err}")
+                print(f"Error/reject reading object-name for {object_identifier}: {err}")
                 names_list.append("ERROR - Delete this row")
 
         return device_address, object_list, names_list
 
-
-    async def do_read_point_names(
-        self,
-        address: Address,
-    ) -> None:
-        """
-        usage: read address objid prop[indx]
-        """
-        # read the property list
-        property_list: Optional[List[PropertyIdentifier]] = None
-        try:
-            property_list = await app.read_property(
-                address, object_identifier, "property-list"
-            )
-            if _debug:
-                _log.debug("    - property_list: %r", property_list)
-        except ErrorRejectAbortNack as err:
-
-            _log.error(f"{object_identifier} property-list error: {err}\n")
-
-        for object_identifier in property_list:
-
-            if _debug:
-                _log.debug(
-                    "do_read_point_names %r %r %r",
-                    address,
-                    object_identifier,
-                    "object-name",
-                )
-
-            try:
-                response = await app.read_property(
-                    address, object_identifier, "object-name"
-                )
-                if _debug:
-                    _log.debug("    - len(response): %r", len(response))
-                    _log.debug("    - response: %r", response)
-
-                _log.debug(response)
-
-            except ErrorRejectAbortNack as err:
-                if _debug:
-                    _log.debug("    - exception: %r", err)
-
-            except Exception as e:
-                _log.error(f"Other error while doing operation: {e}")
 
 
     def supports_priority_array(self, obj_type: str) -> bool:
@@ -276,6 +233,7 @@ class SampleCmd(Cmd):
         }
 
 
+
     async def do_supervisory_logic_checks(self, start_id: int, end_id: int):
         """
         Discover devices in a range of BACnet instance IDs, retrieve points,
@@ -288,7 +246,7 @@ class SampleCmd(Cmd):
                 device_address, object_list, names_list = await self.do_point_discovery(instance_id)
 
                 if device_address is None or not object_list:
-                    print(f"No points found for device {instance_id}")
+                    print(f"No points found for device {instance_id}, skipping...")
                     continue  # Skip to the next device if no points are found
 
                 print(f"Discovered {len(object_list)} points for device {instance_id}")
@@ -309,39 +267,34 @@ class SampleCmd(Cmd):
                     try:
                         priority_array = await self.do_read_point_priority_arr(device_address, (obj_type, obj_id))
 
-                        # Simplify the priority array to only include priority, type, and _value
-                        simplified_priority_array = []
+                        prior_array_index = 0
+
+                        # Simplify the priority array to only include priority, type, and value
                         for item in priority_array:
                             value = item.get('value')
                             type_ = item.get('type')
 
                             # Only keep the entries with non-null values
-                            if value is not None and type_ != 'null':
-                                # Extract _value if it's a complex object like Real, else use value directly
-                                if hasattr(value, 'state') and '_value' in value.state:
-                                    extracted_value = value.state['_value']
-                                else:
-                                    extracted_value = value
-
-                                simplified_priority_array.append({
-                                    "priority": item.get('level'),
+                            if type_ != 'null':
+                                value_str = str(value)
+                                point_data = {
+                                    "priority_level": prior_array_index + 1,
+                                    "object_identifier": object_identifier,
+                                    "object_name": point_name,
                                     "type": type_,
-                                    "_value": extracted_value
-                                })
+                                    "value": value_str
+                                }
+                                device_data["points"].append(point_data)
 
-                        # Only append point data if simplified priority array has valid entries
-                        if simplified_priority_array:
-                            point_data = {
-                                "object_identifier": object_identifier,
-                                "object_name": point_name,
-                                "priority_array": simplified_priority_array,
-                            }
-                            device_data["points"].append(point_data)
-                            print(f"Valid priority array found for {object_identifier}")
-
+                    except KeyError as key_err:
+                        print(f"KeyError while processing {object_identifier}: {key_err}")
+                    except TypeError as type_err:
+                        print(f"TypeError while processing {object_identifier}: {type_err}")
+                    except TimeoutError as timeout_err:
+                        print(f"Timeout while reading priority array for {object_identifier}: {timeout_err}")
                     except Exception as e:
-                        print(f"Failed to read priority array for {object_identifier}: {e}")
-                        continue
+                        print(f"Unexpected error for {object_identifier}: {e}")
+                        continue  # Skip to the next point if there's an error
 
                 # Only save the device data to a file if there are points with valid priority arrays
                 if device_data["points"]:
@@ -352,9 +305,10 @@ class SampleCmd(Cmd):
                 else:
                     print(f"No points with non-null values for device {instance_id}, skipping file save.")
 
+            except TimeoutError as timeout_err:
+                print(f"Timeout occurred for device {instance_id}: {timeout_err}")
             except Exception as e:
                 print(f"Error discovering device {instance_id}: {e}")
-                continue
 
 
 
@@ -362,59 +316,45 @@ class SampleCmd(Cmd):
         self,
         address: Address,
         object_identifier: ObjectIdentifier,
-    ) -> Optional[List[dict]]:
+    ) -> None:
         """
         Read the priority array property of a BACnet object and return its values.
 
         Returns a list of priority values, where each entry is a dictionary with the level and value.
         """
-        if _debug:
-            _log.debug(
-                "do_read_point_priority_arr %r %r %r",
-                address,
-                object_identifier,
-                "priority-array",
-            )
-
         try:
+            # Read the priority array property
             response = await app.read_property(
                 address, object_identifier, "priority-array"
             )
-            if _debug:
-                _log.debug("    - len(response): %r", len(response))
-                _log.debug("    - response: %r", response)
-
+            
             if response:
                 parsed_priority_array = []
 
+                # Parse each entry in the priority array
                 for index, priority_value in enumerate(response):
                     value_type = priority_value._choice
                     value = getattr(priority_value, value_type, None)
 
                     if value is not None:
                         priority_level_data = {
-                            "level": index + 1,  # Priority level starts from 1
+                            "level": index + 1,  # Priority levels start from 1
                             "type": value_type,
                             "value": value
                         }
                         parsed_priority_array.append(priority_level_data)
 
-                        if _debug:
-                            _log.debug(
-                                f"Priority level {index + 1}: {value_type} = {value}"
-                            )
-                        else:
-                            print(f"Priority level {index + 1}: {value_type} = {value}")
+                        # Print the parsed priority level and value
+                        print(f"Priority level {index + 1}: {value_type} = {value}")
 
                 return parsed_priority_array
 
         except ErrorRejectAbortNack as err:
-            if _debug:
-                _log.debug("    - exception: %r", err)
+            print(f"Error reading priority array for {object_identifier}: {err}")
             return None
 
         except Exception as e:
-            _log.error(f"Other error while doing operation: {e}")
+            print(f"An unexpected error occurred while reading priority array for {object_identifier}: {e}")
             return None
 
 
@@ -429,24 +369,21 @@ class SampleCmd(Cmd):
         Reads a property from a BACnet object and returns the value directly.
         """
 
-        if _debug:
-            _log.debug(
-                "do_read %r %r %r %r",
-                address,
-                object_identifier,
-                property_identifier,
-                property_array_index,
-            )
+        print(f"Reading {property_identifier} from {object_identifier} at {address}...")
 
-        # split the property identifier and its index
+        # Split the property identifier and its index
         property_index_match = property_index_re.match(property_identifier)
         if not property_index_match:
             print("Property specification incorrect")
             return None
 
         property_identifier, property_array_index = property_index_match.groups()
+        
+        # Convert to integer if the property identifier is numeric
         if property_identifier.isdigit():
             property_identifier = int(property_identifier)
+        
+        # Convert array index to integer if it exists
         if property_array_index is not None:
             property_array_index = int(property_array_index)
 
@@ -455,22 +392,18 @@ class SampleCmd(Cmd):
             property_value = await app.read_property(
                 address, object_identifier, property_identifier, property_array_index
             )
-            if _debug:
-                _log.debug("    - property_value: %r", property_value)
+            print(f"Property value: {property_value}")
 
         except ErrorRejectAbortNack as err:
-            if _debug:
-                _log.debug("    - exception: %r", err)
+            print(f"Error while reading property: {err}")
             return None
 
+        # If the value is an atomic type, extract the value
         if isinstance(property_value, AnyAtomic):
-            if _debug:
-                _log.debug("    - schedule objects")
             property_value = property_value.get_value()
 
-        # Return the property value directly
-        print(property_value)
         return property_value
+
 
 
     async def do_write(
@@ -482,38 +415,34 @@ class SampleCmd(Cmd):
         priority: int = -1,
     ) -> None:
         """
-        usage: write address objid prop[indx] value [ priority ]
+        Write a property value to a BACnet object.
         """
-        if _debug:
-            _log.debug(
-                "do_write %r %r %r %r %r",
-                address,
-                object_identifier,
-                property_identifier,
-                value,
-                priority,
-            )
+        print(f"Writing {value} to {property_identifier} at {object_identifier} on {address} with priority {priority}...")
 
         # Manually add the command to the history list
         command = f"write {address} {object_identifier} {property_identifier} {value} {priority}"
         command_history.append(command)
 
-        # split the property identifier and its index
+        # Split the property identifier and its index
         property_index_match = property_index_re.match(property_identifier)
         if not property_index_match:
-            await self.response("property specification incorrect")
+            print("Property specification incorrect")
             return
 
         property_identifier, property_array_index = property_index_match.groups()
+        
+        # Convert array index to integer if it exists
         if property_array_index is not None:
             property_array_index = int(property_array_index)
 
+        # Handle 'null' values
         if value == "null":
             if priority is None:
-                raise ValueError("null only for overrides")
+                raise ValueError("null can only be used for overrides")
             value = Null(())
 
         try:
+            # Write the property value
             response = await app.write_property(
                 address,
                 object_identifier,
@@ -522,28 +451,12 @@ class SampleCmd(Cmd):
                 property_array_index,
                 priority,
             )
-            if _debug:
-                _log.debug("    - response: %r", response)
+            print(f"Write successful. Response: {response}")
             assert response is None
 
         except ErrorRejectAbortNack as err:
-            if _debug:
-                _log.debug("    - exception: %r", err)
-            await self.response(str(err))
+            print(f"Error while writing property: {err}")
 
-    async def do_iam(
-        self,
-        address: Optional[Address] = None,
-    ) -> None:
-        """
-        Send an I-Am request, no response.
-
-        usage: iam [ address ]
-        """
-        if _debug:
-            _log.debug("do_iam %r", address)
-
-        app.i_am(address)
 
     async def do_whohas(
         self,
@@ -613,21 +526,61 @@ class SampleCmd(Cmd):
                     f"{i_have.deviceIdentifier[1]} {i_have.objectIdentifier} {i_have.objectName!r}"
                 )
 
-    async def do_ihave(
-        self,
-        object_identifier: ObjectIdentifier,
-        object_name: CharacterString,
-        address: Optional[Address] = None,
-    ) -> None:
+    async def do_whohas(self, *args: str) -> None:
         """
-        Send an I-Have request.
+        Send a Who-Has request, an objid or objname (or both) is required.
 
-        usage: ihave objid objname [ address ]
+        usage: whohas [ low_limit high_limit ] [ objid ] [ objname ] [ address ]
         """
-        if _debug:
-            _log.debug("do_ihave %r %r %r", object_identifier, object_name, address)
+        if not args:
+            raise RuntimeError("object-identifier or object-name expected")
+        
+        args_list: List[str] = list(args)
 
-        app.i_have(object_identifier, object_name, address)
+        # Handle low and high limits if present
+        low_limit = int(args_list.pop(0)) if args_list and args_list[0].isdigit() else None
+        high_limit = int(args_list.pop(0)) if args_list and args_list[0].isdigit() else None
+
+        print(f"Low limit: {low_limit}, High limit: {high_limit}")
+
+        if not args_list:
+            raise RuntimeError("object-identifier expected")
+
+        # Parse object_identifier or object_name
+        try:
+            object_identifier = ObjectIdentifier(args_list[0])
+            del args_list[0]
+        except ValueError:
+            object_identifier = None
+
+        print(f"Object Identifier: {object_identifier}")
+
+        # Determine object name and address based on remaining arguments
+        if len(args_list) == 2:
+            object_name = args_list[0]
+            address = Address(args_list[1])
+        elif len(args_list) == 1:
+            try:
+                address = Address(args_list[0])
+                object_name = None
+            except ValueError:
+                object_name = args_list[0]
+                address = None
+        else:
+            object_name = address = None
+
+        print(f"Object Name: {object_name}, Address: {address}")
+
+        # Send the Who-Has request
+        i_haves = await app.who_has(low_limit, high_limit, object_identifier, object_name, address)
+
+        # Handle responses
+        if not i_haves:
+            print("No response(s)")
+        else:
+            for i_have in i_haves:
+                print(f"Device {i_have.deviceIdentifier[1]} has {i_have.objectIdentifier} named {i_have.objectName!r}")
+
 
     async def do_rpm(
         self,
@@ -638,43 +591,40 @@ class SampleCmd(Cmd):
         Read Property Multiple
         usage: rpm address ( objid ( prop[indx] )... )...
         """
-        print(f" args {args}")
+        print(f"Received arguments: {args}")
         args_list: List[str] = list(args)
 
-        print(f" args_list {args_list}")
+        print(f"Args list: {args_list}")
 
-        # get information about the device from the cache
+        # Get device info from cache
         device_info = await app.device_info_cache.get_device_info(address)
 
-        # using the device info, look up the vendor information
-        if device_info:
-            vendor_info = get_vendor_info(device_info.vendor_identifier)
-        else:
-            vendor_info = get_vendor_info(0)
+        # Look up vendor information
+        vendor_info = get_vendor_info(device_info.vendor_identifier if device_info else 0)
 
         parameter_list = []
         while args_list:
-            # use the vendor information to translate the object identifier,
-            # then use the object type portion to look up the object class
+            # Translate the object identifier using vendor information
             object_identifier = vendor_info.object_identifier(args_list.pop(0))
             object_class = vendor_info.get_object_class(object_identifier[0])
+
             if not object_class:
-                _log.debug(f" unrecognized object type: {object_identifier}")
+                print(f"Unrecognized object type: {object_identifier}")
                 return
 
-            # save this as a parameter
+            # Save this object identifier as a parameter
             parameter_list.append(object_identifier)
 
             property_reference_list = []
             while args_list:
-                # use the vendor info to parse the property reference
+                # Parse the property reference using vendor info
                 property_reference = PropertyReference(
                     args_list.pop(0),
                     vendor_info=vendor_info,
                 )
-                if _debug:
-                    _log.debug("    - property_reference: %r", property_reference)
+                print(f"Property reference: {property_reference}")
 
+                # Check if the property is known
                 if property_reference.propertyIdentifier not in (
                     PropertyIdentifier.all,
                     PropertyIdentifier.required,
@@ -683,61 +633,43 @@ class SampleCmd(Cmd):
                     property_type = object_class.get_property_type(
                         property_reference.propertyIdentifier
                     )
-                    if _debug:
-                        _log.debug("    - property_type: %r", property_type)
-                        _log.debug(
-                            "    - property_reference.propertyIdentifier: %r",
-                            property_reference.propertyIdentifier,
-                        )
+                    print(f"Property type: {property_type}")
+
                     if not property_type:
-                        _log.debug(
-                            f"unrecognized property: {property_reference.propertyIdentifier}"
-                        )
+                        print(f"Unrecognized property: {property_reference.propertyIdentifier}")
                         return
 
-                # save this as a parameter
+                # Save this property reference as a parameter
                 property_reference_list.append(property_reference)
 
-                # crude check to see if the next thing is an object identifier
+                # Break if the next thing is an object identifier
                 if args_list and ((":" in args_list[0]) or ("," in args_list[0])):
                     break
 
-            # save this as a parameter
+            # Save the property reference list as a parameter
             parameter_list.append(property_reference_list)
 
         if not parameter_list:
-            await self.response("object identifier expected")
+            print("Object identifier expected")
             return
 
         try:
-
+            # Perform the read property multiple operation
             response = await app.read_property_multiple(address, parameter_list)
-
         except ErrorRejectAbortNack as err:
-            if _debug:
-                _log.debug("    - exception: %r", err)
-            await self.response(str(err))
+            print(f"Error during RPM: {err}")
             return
 
-        # dump out the results
-        for (
-            object_identifier,
-            property_identifier,
-            property_array_index,
-            property_value,
-        ) in response:
+        # Print out the results
+        for object_identifier, property_identifier, property_array_index, property_value in response:
             if property_array_index is not None:
-                await self.response(
-                    f"{object_identifier} {property_identifier}[{property_array_index}] {property_value}"
-                )
+                print(f"{object_identifier} {property_identifier}[{property_array_index}] = {property_value}")
             else:
-                await self.response(
-                    f"{object_identifier} {property_identifier} {property_value}"
-                )
+                print(f"{object_identifier} {property_identifier} = {property_value}")
+
             if isinstance(property_value, ErrorType):
-                await self.response(
-                    f"    {property_value.errorClass}, {property_value.errorCode}"
-                )
+                print(f"    Error: {property_value.errorClass}, {property_value.errorCode}")
+
 
     async def do_whois(
         self, low_limit: Optional[int] = None, high_limit: Optional[int] = None
@@ -747,35 +679,31 @@ class SampleCmd(Cmd):
 
         usage: whois [ low_limit high_limit ]
         """
-        if _debug:
-            _log.debug("do_whois %r %r", low_limit, high_limit)
+        print(f"Sending Who-Is request with low limit: {low_limit}, high limit: {high_limit}")
 
+        # Send the Who-Is request
         i_ams = await app.who_is(low_limit, high_limit)
+        
         if not i_ams:
-            await self.response("No response(s)")
+            print("No response(s) received")
         else:
+            # Loop through responses
             for i_am in i_ams:
-                if _debug:
-                    _log.debug("    - i_am: %r", i_am)
-
                 device_address: Address = i_am.pduSource
                 device_identifier: ObjectIdentifier = i_am.iAmDeviceIdentifier
-                if _debug:
-                    _log.debug(f"{device_identifier} @ {device_address}")
-                else:
-                    print(f"{device_identifier} @ {device_address}")
 
+                print(f"Device {device_identifier} found at {device_address}")
+
+                # Try reading the device description
                 try:
                     device_description: str = await app.read_property(
                         device_address, device_identifier, "description"
                     )
-                    if _debug:
-                        _log.debug(f"    description: {device_description}")
-                    else:
-                        print(f"description: {device_description}")
+                    print(f"Description: {device_description}")
 
                 except ErrorRejectAbortNack as err:
-                    _log.error(f"{device_identifier} description error: {err}\n")
+                    print(f"Error reading description for {device_identifier}: {err}")
+
 
     async def do_who_is_router_to_network(
         self, address: Optional[Address] = None, network: Optional[int] = None
@@ -784,24 +712,26 @@ class SampleCmd(Cmd):
         Who Is Router To Network
         usage: who_is_router_to_network [ address [ network ] ]
         """
-        if _debug:
-            _log.debug("do_wirtn %r %r", address, network)
-        assert app.nse
+        print(f"Sending Who-Is-Router-To-Network request to address: {address}, network: {network}")
+        assert app.nse  # Ensure the network service element is available
 
+        # Send the request and await the response
         result_list: List[Tuple[NetworkAdapter, IAmRouterToNetwork]] = (
             await app.nse.who_is_router_to_network(destination=address, network=network)
         )
-        if _debug:
-            _log.debug("    - result_list: %r", result_list)
+
+        # Check if we received any responses
         if not result_list:
-            raise RuntimeError("no response")
+            print("No response received")
+            return
 
         report = []
         previous_source = None
+
+        # Process the results
         for adapter, i_am_router_to_network in result_list:
-            if _debug:
-                _log.debug("    - adapter: %r", adapter)
-                _log.debug("    - i_am_router_to_network: %r", i_am_router_to_network)
+            print(f"Adapter: {adapter}")
+            print(f"Router to Network response: {i_am_router_to_network}")
 
             if i_am_router_to_network.npduSADR:
                 npdu_source = i_am_router_to_network.npduSADR
@@ -809,18 +739,18 @@ class SampleCmd(Cmd):
             else:
                 npdu_source = i_am_router_to_network.pduSource
 
-            if (not previous_source) or (npdu_source != previous_source):
+            # Add the source to the report if it's different from the previous one
+            if not previous_source or npdu_source != previous_source:
                 report.append(str(npdu_source))
                 previous_source = npdu_source
 
+            # Append the network list to the report
             report.append(
-                "    "
-                + ", ".join(
-                    str(dnet) for dnet in i_am_router_to_network.iartnNetworkList
-                )
+                "    " + ", ".join(str(dnet) for dnet in i_am_router_to_network.iartnNetworkList)
             )
 
-        await self.response("\n".join(report))
+        # Print the report
+        print("\n".join(report))
 
 
 async def main() -> None:

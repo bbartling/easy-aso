@@ -5,6 +5,7 @@ This tool allows for testing BACnet networks using the [bacpypes3](https://bacpy
 
 ## Features
 - **Device Discovery (Who-Is)**
+- **Mapping out BAS Supervisory Level Writing and save data to YAML**
 - **Reading and Writing BACnet Points**
 - **Checking BACnet Priority Arrays**
 - **Saving Device Configurations to YAML**
@@ -56,6 +57,12 @@ Discover BACnet devices using the `whois` command. You can specify a range of de
 
 ```bash
 > whois <low_limit> <high_limit>
+
+## Supervisory Logic Check
+Discover devices within a range of instance IDs and check the BACnet priority array to detect supervisory logic:
+
+```bash
+> supervisory_logic_checks <low_limit> <high_limit>
 ```
 
 Example:
@@ -171,6 +178,7 @@ Example:
   Example:
   ```bash
   > whohas analog-value,302 10.7.6.161/24:47820
+  > whohas "ZN-T"
   ```
 
 - **Who-Is Router to Network:**
@@ -181,7 +189,7 @@ Example:
 ## Example Session
 
 ```bash
-$ python tester.py --debug
+$ python tester.py
 > whois 10 110
 device,24 @ 12:24
 description: VAV CTRL/ACT/DP,HTG,FAN
@@ -198,6 +206,7 @@ analog-input,2 present-value 59.34
 > who_is_router_to_network
 10.200.200.26
     11, 12
+
 ```
 
 ## Conclusion
