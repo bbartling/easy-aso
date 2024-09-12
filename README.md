@@ -1,4 +1,7 @@
-# FreeBAS
+# Easy ASO
+
+Easy ASO is a streamlined tool designed for Automated Supervisory Optimization (ASO) of BACnet systems. With simple configuration and intuitive commands, it makes it easy to monitor and adjust building systems for optimized performance, reducing energy consumption and maintaining comfort levels. 
+It automates BACnet property reads and writes, enabling users to easily implement control strategies without the complexity, making optimization accessible for all!
 
 Why cant a BAS be free?
 

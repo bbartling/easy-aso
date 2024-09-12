@@ -1,58 +1,53 @@
-# main.py
-from bacnet_client import BACnetClient
-from models import ReadMultiplePropertiesRequest
+import asyncio
+from easy_aso import EasyASO
+from bacpypes3.pdu import Address
+from bacpypes3.primitivedata import ObjectIdentifier
 
+address = Address("10.200.200.233")  # Replace with the actual IP address of the device
+object_identifier = ObjectIdentifier("analog-value,12")  # Replace with the correct object identifier
+property_identifier = "present-value"
 
-async def run_bacnet_operations():
-    client = BACnetClient()
+async def monitor_building_power(app, interval: int):
+    """
+    Monitors the building power at a set interval and applies optimization logic if necessary.
+    """
+    while True:
+        # Perform a read operation to get the building power
+        building_power = await app.do_read(address, object_identifier, property_identifier)
+        print("Building power is ", building_power)
 
-    async with client.manage_bacnet_service():
-        # Example read and write logic
-        device_instance = 12345
-        object_identifier = "analog-input,2"
-        property_identifier = "present-value"
-        value = 50.0
+        # Simulate logic: If the building power is greater than 100, override equipment or setpoint
+        if building_power and float(building_power) > 100:
+            print(f"Building power is {building_power}, exceeding threshold. Lowering setpoint...")
+            await app.do_write(address, object_identifier, property_identifier, 72.0, 10)
+        else:
+            print(f"Building power is {building_power}, no need to override.")
 
-        # Perform read
-        read_result = await client.read_property(
-            device_instance, object_identifier, property_identifier
+        # Wait for the specified interval before checking again
+        await asyncio.sleep(interval)
+
+async def run_easy_aso(interval: int):
+    """
+    Function to create and run EasyASO instance with periodic monitoring and server updates.
+    """
+    try:
+        app = EasyASO()
+
+        # Ensure the application is created before doing anything else
+        await app.create_application()
+
+        # Run both the server update task and the building power monitor concurrently
+        await asyncio.gather(
+            app.update_server(),  # Server updates every 1 second
+            monitor_building_power(app, interval)  # Monitor building power at specified interval
         )
-        print(f"Read result: {read_result}")
 
-        # Perform write
-        write_result = await client.write_property(
-            device_instance, object_identifier, property_identifier, value
-        )
-        print(f"Write result: {write_result}")
-
-        # Perform WhoIs
-        who_is_result = await client.perform_who_is(1000, 5000)
-        print(f"WhoIs result: {who_is_result}")
-
-        # Perform point discovery
-        point_discovery_result = await client.point_discovery(device_instance)
-        print(f"Point discovery result: {point_discovery_result}")
-
-        # Perform BACnet read multiple
-        read_multiple_requests = [
-            ReadMultiplePropertiesRequest(
-                object_identifier="analog-input,1", property_identifier="present-value"
-            ),
-            ReadMultiplePropertiesRequest(
-                object_identifier="analog-output,2", property_identifier="description"
-            ),
-        ]
-        read_multiple_result = await client.read_multiple_properties(
-            device_instance, read_multiple_requests
-        )
-        print(f"Read multiple properties result: {read_multiple_result}")
-
-        # Perform WhoIs range
-        who_is_range_result = await client.who_is_range(1000, 1500)
-        print(f"WhoIs range result: {who_is_range_result}")
-
+    except KeyboardInterrupt:
+        print("ASO application interrupted.")
 
 if __name__ == "__main__":
-    import asyncio
+    # Set the interval in seconds for checking the building power
+    INTERVAL = 60  # Example: Check building power every 60 seconds
 
-    asyncio.run(run_bacnet_operations())
+    # Run the asyncio event loop
+    asyncio.run(run_easy_aso(INTERVAL))
