@@ -8,15 +8,18 @@ from bacpypes3.local.binary import BinaryInputObject
 from bacpypes3.local.cmd import Commandable
 from bacpypes3.object import MultiStateValueObject
 
-'''
+"""
 python fake_ahu_sys.py --name BensFakeAhu --instance 3056672
-'''
+"""
+
 
 class CommandableAnalogValueObject(Commandable, AnalogValueObject):
     """Commandable Analog Value Object"""
 
+
 class CommandableMultiStateValueObject(Commandable, MultiStateValueObject):
     """Commandable Multi-State Value Object"""
+
 
 class FakeAHUApplication:
     def __init__(self, args):
@@ -29,48 +32,48 @@ class FakeAHUApplication:
                 objectName="DAP-P",
                 presentValue=1.0,
                 units="inchesOfWater",
-                description="AHU Duct Pressure"
+                description="AHU Duct Pressure",
             ),
             "SA-T": AnalogInputObject(
                 objectIdentifier=("analogInput", 2),
                 objectName="SA-T",
                 presentValue=75.0,
                 units="degreesFahrenheit",
-                description="AHU Supply Air Temp"
+                description="AHU Supply Air Temp",
             ),
             "MA-T": AnalogInputObject(
                 objectIdentifier=("analogInput", 3),
                 objectName="MA-T",
                 presentValue=72.0,
                 units="degreesFahrenheit",
-                description="AHU Mixed Air Temp"
+                description="AHU Mixed Air Temp",
             ),
             "RA-T": AnalogInputObject(
                 objectIdentifier=("analogInput", 4),
                 objectName="RA-T",
                 presentValue=70.0,
                 units="degreesFahrenheit",
-                description="AHU Return Air Temp"
+                description="AHU Return Air Temp",
             ),
             "SF-S": BinaryInputObject(
                 objectIdentifier=("binaryInput", 5),
                 objectName="SF-S",
                 presentValue="active",
-                description="Supply Fan Status"
+                description="Supply Fan Status",
             ),
             "SA-FLOW": AnalogInputObject(
                 objectIdentifier=("analogInput", 6),
                 objectName="SA-FLOW",
                 presentValue=1000.0,
                 units="cubicFeetPerMinute",
-                description="Supply Air Flow"
+                description="Supply Air Flow",
             ),
             "OA-T": AnalogInputObject(
                 objectIdentifier=("analogInput", 7),
                 objectName="OA-T",
                 presentValue=85.0,
                 units="degreesFahrenheit",
-                description="Outside Air Temperature (Local)"
+                description="Outside Air Temperature (Local)",
             ),
             # Commandable points (won't be updated)
             "DAP-SP": CommandableAnalogValueObject(
@@ -79,7 +82,7 @@ class FakeAHUApplication:
                 presentValue=1.0,
                 units="inchesOfWater",
                 covIncrement=0.1,
-                description="AHU Duct Pressure Setpoint"
+                description="AHU Duct Pressure Setpoint",
             ),
             "SF-O": CommandableAnalogValueObject(
                 objectIdentifier=("analogOutput", 9),
@@ -87,7 +90,7 @@ class FakeAHUApplication:
                 presentValue=50.0,
                 units="percent",
                 covIncrement=1.0,
-                description="Supply Fan Speed Command"
+                description="Supply Fan Speed Command",
             ),
             "HTG-O": CommandableAnalogValueObject(
                 objectIdentifier=("analogOutput", 10),
@@ -95,7 +98,7 @@ class FakeAHUApplication:
                 presentValue=0.0,
                 units="percent",
                 covIncrement=1.0,
-                description="Heating Valve Command"
+                description="Heating Valve Command",
             ),
             "CLG-O": CommandableAnalogValueObject(
                 objectIdentifier=("analogOutput", 11),
@@ -103,7 +106,7 @@ class FakeAHUApplication:
                 presentValue=0.0,
                 units="percent",
                 covIncrement=1.0,
-                description="Cooling Valve Command"
+                description="Cooling Valve Command",
             ),
             "OAT-NETWORK": CommandableAnalogValueObject(
                 objectIdentifier=("analogValue", 12),
@@ -111,7 +114,7 @@ class FakeAHUApplication:
                 presentValue=85.0,
                 units="degreesFahrenheit",
                 covIncrement=0.1,
-                description="Outside Air Temperature (Network)"
+                description="Outside Air Temperature (Network)",
             ),
             "Occ-Schedule": CommandableMultiStateValueObject(
                 objectIdentifier=("multiStateValue", 343),
@@ -119,8 +122,8 @@ class FakeAHUApplication:
                 presentValue=1,  # Start as Occupied
                 numberOfStates=4,  # Occupied, UnOccupied, Standby, Not Set
                 stateText=["Not Set", "Occupied", "UnOccupied", "Standby"],
-                description="Occupancy Schedule"
-            )
+                description="Occupancy Schedule",
+            ),
         }
 
         # Add all objects to the BACnet application
@@ -149,6 +152,7 @@ class FakeAHUApplication:
                     # Print the commandable objects as well
                     print(f"{name}: {obj.presentValue}")
 
+
 async def main():
     args = SimpleArgumentParser().parse_args()
     logging.info("args: %r", args)
@@ -158,6 +162,7 @@ async def main():
 
     # Run the BACnet server until interrupted
     await asyncio.Future()
+
 
 if __name__ == "__main__":
     try:

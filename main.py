@@ -1,53 +1,66 @@
 import asyncio
 from easy_aso import EasyASO
-from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import ObjectIdentifier
 
-address = Address("10.200.200.233")  # Replace with the actual IP address of the device
-object_identifier = ObjectIdentifier("analog-value,12")  # Replace with the correct object identifier
-property_identifier = "present-value"
+# BACnet configuration constants
+POWER_MTR_BACNET_ADDR = "10.200.200.233"
+POWER_MTR_BACNET_OBJ_ID = "analog-input,1"
+POWER_THRESHOLD = 80.0  # kW
 
-async def monitor_building_power(app, interval: int):
-    """
-    Monitors the building power at a set interval and applies optimization logic if necessary.
-    """
+CHILLER_BACNET_ADDR = "10.200.200.233"
+CHILLER_BACNET_OBJ_ID = "analog-value,12"
+CHILLER_WRITE_VALUE = 0.0
+CHILLER_RELEASE_VALUE = "null"
+CHILLER_WRITE_PRIORITY = 10
+
+# Time constants
+SLEEP_INTERVAL_SECONDS = 60
+DUTY_CYCLE_INTERVAL_SECONDS = 900  # 15 minutes
+
+async def monitor_building_power(app):
+    last_operation_time = 0  # Initialized to 0
+
     while True:
-        # Perform a read operation to get the building power
-        building_power = await app.do_read(address, object_identifier, property_identifier)
-        print("Building power is ", building_power)
-
-        # Simulate logic: If the building power is greater than 100, override equipment or setpoint
-        if building_power and float(building_power) > 100:
-            print(f"Building power is {building_power}, exceeding threshold. Lowering setpoint...")
-            await app.do_write(address, object_identifier, property_identifier, 72.0, 10)
-        else:
-            print(f"Building power is {building_power}, no need to override.")
-
-        # Wait for the specified interval before checking again
-        await asyncio.sleep(interval)
-
-async def run_easy_aso(interval: int):
-    """
-    Function to create and run EasyASO instance with periodic monitoring and server updates.
-    """
-    try:
-        app = EasyASO()
-
-        # Ensure the application is created before doing anything else
-        await app.create_application()
-
-        # Run both the server update task and the building power monitor concurrently
-        await asyncio.gather(
-            app.update_server(),  # Server updates every 1 second
-            monitor_building_power(app, interval)  # Monitor building power at specified interval
+        building_power = await app.do_read(
+            POWER_MTR_BACNET_ADDR, POWER_MTR_BACNET_OBJ_ID
         )
+        print("Building power is", building_power)
 
-    except KeyboardInterrupt:
-        print("ASO application interrupted.")
+        current_time = asyncio.get_event_loop().time()
+        if current_time - last_operation_time < DUTY_CYCLE_INTERVAL_SECONDS:
+            print(
+                f"Waiting for short cycle prevention timer.\n"
+                f"Time remaining: {int(DUTY_CYCLE_INTERVAL_SECONDS - (current_time - last_operation_time))} seconds."
+            )
+        else:
+            if building_power and building_power > POWER_THRESHOLD:
+                print(
+                    f"Building power is {building_power}, exceeding threshold.\n"
+                    f"Lowering setpoint..."
+                )
+                await app.do_write(
+                    CHILLER_BACNET_ADDR,
+                    CHILLER_BACNET_OBJ_ID,
+                    CHILLER_WRITE_VALUE,
+                    CHILLER_WRITE_PRIORITY,
+                )
+                last_operation_time = current_time
+            elif building_power and building_power <= POWER_THRESHOLD:
+                print(
+                    f"Building power is {building_power}, below threshold.\n"
+                    f"Releasing control..."
+                )
+                await app.do_write(
+                    CHILLER_BACNET_ADDR,
+                    CHILLER_BACNET_OBJ_ID,
+                    CHILLER_RELEASE_VALUE,
+                    CHILLER_WRITE_PRIORITY,
+                )
+                last_operation_time = current_time
+
+        await asyncio.sleep(SLEEP_INTERVAL_SECONDS)
+
+async def main():
+    await EasyASO().run(monitor_building_power)
 
 if __name__ == "__main__":
-    # Set the interval in seconds for checking the building power
-    INTERVAL = 60  # Example: Check building power every 60 seconds
-
-    # Run the asyncio event loop
-    asyncio.run(run_easy_aso(INTERVAL))
+    asyncio.run(main())

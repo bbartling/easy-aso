@@ -1,39 +1,17 @@
 import asyncio
-import re
-from typing import Callable, List, Any, Optional, Tuple
-
-from bacpypes3.argparse import SimpleArgumentParser
-from bacpypes3.app import Application
-from bacpypes3.local.binary import BinaryValueObject
-from bacpypes3.local.cmd import Commandable
 from bacpypes3.pdu import Address
-from bacpypes3.object import ObjectIdentifier
-from bacpypes3.primitivedata import Null
+from bacpypes3.primitivedata import ObjectIdentifier, Null
+from bacpypes3.apdu import ErrorRejectAbortNack
 from bacpypes3.constructeddata import AnyAtomic
-from bacpypes3.apdu import (
-    ErrorRejectAbortNack,
-    PropertyReference,
-    PropertyIdentifier,
-    ErrorType,
-)
-
-
-
-# Interval in seconds for server updates
-INTERVAL = 1.0
-
-# A regex for parsing property identifier strings
-property_index_re = re.compile(r"([a-zA-Z\-]+)(\[(\d+)\])?")
-
-# A list to hold command history (for demonstration purposes)
-command_history = []
-
+from bacpypes3.app import Application
+from bacpypes3.argparse import SimpleArgumentParser
+from bacpypes3.local.cmd import Commandable
+from bacpypes3.local.binary import BinaryValueObject
 
 class CommandableBinaryValueObject(Commandable, BinaryValueObject):
     """
     Commandable Binary Value Object
     """
-
 
 class EasyASO:
     def __init__(self, args=None):
@@ -53,109 +31,74 @@ class EasyASO:
         print(f"Commandable Binary Value Object initialized: {self.optimization_enabled_bv}")
 
     async def create_application(self):
-        # Create an application instance and add objects
+        # Create an application instance and add the commandable binary value object
         self.app = Application.from_args(self.args)
         self.app.add_object(self.optimization_enabled_bv)
         print("Application and objects created and added.")
 
     async def update_server(self):
         """
-        Simulates BACnet server updates on a fixed interval (e.g., every 1 second).
+        Simulates server updates on a 1-second interval.
         """
         while True:
-            # Update the server logic here (e.g., handling updates to BACnet objects)
-            print("Updating BACnet server...")
-            await asyncio.sleep(INTERVAL)  # Wait for 1 second before next update
+            await asyncio.sleep(1)
 
-    def parse_property_identifier(self, property_identifier):
-        # BACnet writes processess
-        # Regular expression for 'property[index]' matching
-        property_index_re = re.compile(r"^([A-Za-z-]+)(?:\[([0-9]+)\])?$")
-
-        # Match the property identifier
-        property_index_match = property_index_re.match(property_identifier)
-        if not property_index_match:
-            raise ValueError(" property specification incorrect")
-
-        property_identifier, property_array_index = property_index_match.groups()
-        if property_array_index is not None:
-            property_array_index = int(property_array_index)
-
-        return property_identifier, property_array_index
-
-    async def do_read(
-        self,
-        address: Address,
-        object_identifier: ObjectIdentifier,
-        property_identifier: str,
-        property_array_index=None,  # Set the default value to None
-    ) -> Optional[Any]:
+    async def do_read(self, address: str, object_identifier: str, property_identifier="present-value"):
         """
-        Reads a property from a BACnet object and returns the value directly.
+        Handles reading from a BACnet object. Uses 'present-value' as default property identifier.
         """
-
         try:
-            # Read the property value
-            property_value = await self.app.read_property(
-                address, object_identifier, property_identifier, property_array_index
-            )
-            print(f"Property value: {property_value}")
-
-        except ErrorRejectAbortNack as err:
-            print(f"Error while reading property: {err}")
+            address_obj = self._convert_to_address(address)
+            object_id_obj = self._convert_to_object_identifier(object_identifier)
+            property_value = await self.app.read_property(address_obj, object_id_obj, property_identifier)
+            if isinstance(property_value, AnyAtomic):
+                return property_value.get_value()
+            return property_value
+        except ErrorRejectAbortNack as e:
+            print(f"Error reading property: {e}")
             return None
 
-        # If the value is an atomic type, extract the value
-        if isinstance(property_value, AnyAtomic):
-            property_value = property_value.get_value()
-
-        return property_value
-
-
-
-    async def do_write(
-        self,
-        address: Address,
-        object_identifier: ObjectIdentifier,
-        property_identifier: str,
-        value: str,
-        priority: int = -1,
-    ) -> None:
-    
-        property_identifier, property_array_index = self.parse_property_identifier(
-        property_identifier
-        )
-
-        # Convert array index to integer if it exists
-        if property_array_index is not None:
-            property_array_index = int(property_array_index)
-
-        # Handle 'null' values
-        if value == "null":
-            if priority is None:
-                raise ValueError("null can only be used for overrides")
-            value = Null(())
-
-        try:
-            # Write the property value
-            response = await self.app.write_property(
-                address,
-                object_identifier,
-                property_identifier,
-                value,
-                property_array_index,
-                priority,
-            )
-            print(f"Write successful. Response: {response}")
-            assert response is None
-
-        except ErrorRejectAbortNack as err:
-            print(f"Error while writing property: {err}")
-
-    async def run(self):
+    async def do_write(self, address: str, object_identifier: str, value: any, priority: int = -1, property_identifier="present-value"):
         """
-        Starts the ASO application and begins server updates and other tasks.
+        Handles writing to a BACnet object. Uses 'present-value' as default property identifier.
+        If value is 'null', it triggers a release using Null().
+        """
+        try:
+            address_obj = self._convert_to_address(address)
+            object_id_obj = self._convert_to_object_identifier(object_identifier)
+
+            # Handle 'null' values for release
+            if value == "null":
+                if priority is None:
+                    raise ValueError("null can only be used for overrides with a priority")
+                value = Null(())
+
+            # Write the property value
+            response = await self.app.write_property(address_obj, object_id_obj, property_identifier, value, priority)
+            print(f"Write successful. Value: {value}, Priority: {priority}, Response: {response}")
+
+        except ErrorRejectAbortNack as e:
+            print(f"Error writing property: {e}")
+
+    async def run(self, custom_task):
+        """
+        Starts the EasyASO application and runs the custom monitoring task.
         """
         await self.create_application()  # Ensure application is created
-        await self.update_server()  # Continuously update the BACnet server
-        await asyncio.Future()  # Keep the event loop running
+        await asyncio.gather(
+            self.update_server(),  # Runs server updates in the background
+            custom_task(self)      # Runs the custom task (e.g., monitoring logic)
+        )
+
+    def _convert_to_address(self, address: str) -> Address:
+        """
+        Convert a string to a BACnet Address object.
+        """
+        return Address(address)
+
+    def _convert_to_object_identifier(self, obj_id: str) -> ObjectIdentifier:
+        """
+        Convert a string to a BACnet ObjectIdentifier.
+        """
+        object_type, instance_number = obj_id.split(",")
+        return ObjectIdentifier((object_type.strip(), int(instance_number.strip())))
