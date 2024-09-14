@@ -43,7 +43,7 @@ Why cant a BAS be free?
 
 ## Schematic: Python Script Deployment Behind the Firewall
 
-![Schematic of Python script deployment](https://raw.githubusercontent.com/bbartling/easy-aso/blob/develop/new_building.png)
+![Schematic of Python script deployment](https://raw.githubusercontent.com/bbartling/easy-aso/develop/new_building.png)
 
 ## Cybersecurity Disclaimer
 
