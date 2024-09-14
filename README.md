@@ -1,20 +1,64 @@
 # Easy ASO
 
-Easy ASO is a streamlined tool designed for Automated Supervisory Optimization (ASO) of BACnet systems. With simple configuration and intuitive commands, it makes it easy to monitor and adjust building systems for optimized performance, reducing energy consumption and maintaining comfort levels. 
-It automates BACnet property reads and writes, enabling users to easily implement control strategies without the complexity, making optimization accessible for all!
+Easy ASO is a streamlined tool designed for Automated Supervisory Optimization (ASO) of BACnet systems. With simple configuration and intuitive commands, it simplifies the process of monitoring and adjusting building systems to optimize performance, reduce energy consumption, and maintain comfort levels.
 
+By automating BACnet property reads and writes, Easy ASO enables users to implement control strategies with ease, eliminating complexity and making optimization accessible and highly customizable. With Python as your tool, your creativity is the only limitation. Examples are designed to be 100 lines of code or less!
+
+
+
+## BACnet Services Supported
+
+- [x] Read
+- [x] Write
+
+## `Tester.py` inside the scripts directory for exploring a remote BACnet site via the bacpypes3 console to aid in the setup of `easy-aso`
+
+- [x] Read Property (`read_property`)
+- [x] Write Property (`write_property`)
+- [x] Read Property Multiple (`read_property_multiple`)
+- [x] Read Priority Array (`read_property` with `priority-array`)
+- [x] Device Discovery (`who-is`)
+- [x] Object Discovery (`who-has`)
+- [x] Read All Points (`do_point_discovery`)
+- [x] Router Discovery (`who_is_router_to_network`)
+
+
+## Writeups
 Why cant a BAS be free?
 
 * https://www.linkedin.com/pulse/can-building-automation-free-ben-bartling-mtvwc/
 
-TODO's
 
-### In Progress
- - [X] Overhall app code with bacpypes3
- - [ ] Test out basic functionality on a test bench scenorio with another fake BACnet app to simulate a fake AHU system and VAVs
- - [ ] Create unit tests for generic supervisory processes in BAS contracting like OA-Temp share and Occupancy Scheduling
- - [ ] Publish the project as a Python library on PyPI
- - [ ] Incorporate an alarm dial out feature in a creative Pythonic setup
+## In Progress
+- [x] Overhaul app code with bacpypes3
+- [ ] Test basic functionality on a test bench scenario with another fake BACnet app to simulate a fake AHU system and VAVs
+- [ ] Create unit tests for generic supervisory processes in BAS contracting, such as OA-Temp share and Occupancy Scheduling
+- [ ] Publish the project as a Python library on PyPI
+- [ ] Add support for BACnet Read Multiple
+- [ ] Make tutorials for:
+  - Electrical load shed example
+  - BAS global variable sharing
+  - AHU Trim and Respond
+  - Overnight building flush
+
+## Schematic: Python Script Deployment Behind the Firewall
+
+![Schematic of Python script deployment](https://raw.githubusercontent.com/bbartling/easy-aso/blob/develop/new_building.png)
+
+## Cybersecurity Disclaimer
+
+Easy ASO is designed as an operations technology (OT) application with no built-in cloud connectivity but it is fully capable of anything programmed in Python. Any implementation of cloud connectivity for this app is the responsibility of the user. It is crucial to understand the cybersecurity implications of sending bi-directional signals to building systems.
+
+**Security Best Practices**:
+- Adhere to the highest cybersecurity standards, including network hardening, secure configurations, and regular security audits.
+- Involve your organization's IT department when implementing cloud connectivity to ensure compliance with security policies.
+- Implement access controls, encryption, and secure communication protocols to protect building systems from unauthorized access or cyberattacks.
+
+**Responsibility**:
+The creator of this app and its affiliates take no responsibility for damage to equipment, property, or people resulting from inadequate cybersecurity practices. The provided examples do not include cloud connectivity to minimize risk. Implementing cloud connectivity is at the user's discretion and should be done with the utmost care and adherence to industry security standards.
+
+**Important Note**:
+For any scenarios involving cloud-based control of building systems, it is highly recommended to work closely with cybersecurity professionals to secure all communication channels and minimize potential risks.
 
 
 ## License:

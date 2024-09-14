@@ -51,12 +51,29 @@ class EasyASO:
             address_obj = self._convert_to_address(address)
             object_id_obj = self._convert_to_object_identifier(object_identifier)
             property_value = await self.app.read_property(address_obj, object_id_obj, property_identifier)
+            
             if isinstance(property_value, AnyAtomic):
                 return property_value.get_value()
+            
             return property_value
+        
         except ErrorRejectAbortNack as e:
             print(f"Error reading property: {e}")
             return None
+        except TypeError as e:
+            print(f"Type error while reading property: {e} - Address: {address}, Object ID: {object_identifier}, Property Identifier: {property_identifier}")
+            return None
+        except Exception as e:
+            print(f"Unexpected error while reading property: {e} - Address: {address}, Object ID: {object_identifier}, Property Identifier: {property_identifier}")
+            return None
+
+    def parse_property_identifier(self, property_identifier):
+        # Example parsing logic (modify as needed for your use case)
+        if ',' in property_identifier:
+            prop_id, prop_index = property_identifier.split(',')
+            return prop_id.strip(), int(prop_index.strip())
+        return property_identifier, None
+
 
     async def do_write(self, address: str, object_identifier: str, value: any, priority: int = -1, property_identifier="present-value"):
         """
@@ -67,6 +84,9 @@ class EasyASO:
             address_obj = self._convert_to_address(address)
             object_id_obj = self._convert_to_object_identifier(object_identifier)
 
+            # Parse property identifier and index
+            property_identifier, property_array_index = self.parse_property_identifier(property_identifier)
+
             # Handle 'null' values for release
             if value == "null":
                 if priority is None:
@@ -74,11 +94,19 @@ class EasyASO:
                 value = Null(())
 
             # Write the property value
-            response = await self.app.write_property(address_obj, object_id_obj, property_identifier, value, priority)
+            response = await self.app.write_property(
+                address_obj, object_id_obj, property_identifier, value, property_array_index, priority
+            )
             print(f"Write successful. Value: {value}, Priority: {priority}, Response: {response}")
 
         except ErrorRejectAbortNack as e:
             print(f"Error writing property: {e}")
+        except TypeError as e:
+            print(f"Type error while writing property: {e} - Value attempted: {value}")
+        except Exception as e:
+            print(f"Unexpected error while writing property: {e} - Value attempted: {value}")
+
+
 
     async def run(self, custom_task):
         """

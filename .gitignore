@@ -11,6 +11,13 @@ __pycache__/
 *.pem
 *.key
 
+# Ignore all .yaml files
+*.yaml
+
+# Ignore all files with .history extension
+*.history
+
+
 raw_graph_models/
 devices/raw_graph_models/
 raw_graph_models/
