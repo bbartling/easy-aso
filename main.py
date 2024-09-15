@@ -1,16 +1,20 @@
 import asyncio
 from easy_aso import EasyASO
 
+"""
+$ python main.py --name easy-aso --instance 987654
+"""
+
 # BACnet configuration constants
 POWER_MTR_BACNET_ADDR = "10.200.200.233"
-POWER_MTR_BACNET_OBJ_ID = "analog-input,1"
-POWER_THRESHOLD = 80.0  # kW
+POWER_MTR_BACNET_OBJ_ID = "analog-input,7"
+POWER_THRESHOLD = 120.0  # a fake kW setpoint
 
-CHILLER_BACNET_ADDR = "10.200.200.233"
-CHILLER_BACNET_OBJ_ID = "analog-value,12"
-CHILLER_WRITE_VALUE = 0.0
-CHILLER_RELEASE_VALUE = "null"
-CHILLER_WRITE_PRIORITY = 10
+AHU_COOL_VALVE_BACNET_ADDR = "10.200.200.233"
+AHU_COOL_VALVE_BACNET_OBJ_ID = "analog-output,3"
+AHU_COOL_VALVE_WRITE_VALUE = 0.0
+AHU_COOL_VALVE_RELEASE_VALUE = "null"
+AHU_COOL_VALVE_WRITE_PRIORITY = 10
 
 # Time constants
 SLEEP_INTERVAL_SECONDS = 60
@@ -27,10 +31,12 @@ async def monitor_building_power(app):
         print("Building power is", building_power)
 
         current_time = asyncio.get_event_loop().time()
+        time_calc = int(DUTY_CYCLE_INTERVAL_SECONDS - (current_time - last_operation_time))
+
         if current_time - last_operation_time < DUTY_CYCLE_INTERVAL_SECONDS:
             print(
                 f"Waiting for short cycle prevention timer.\n"
-                f"Time remaining: {int(DUTY_CYCLE_INTERVAL_SECONDS - (current_time - last_operation_time))} seconds."
+                f"Time remaining: {time_calc} seconds."
             )
         else:
             if building_power and building_power > POWER_THRESHOLD:
@@ -39,10 +45,10 @@ async def monitor_building_power(app):
                     f"Lowering setpoint..."
                 )
                 await app.do_write(
-                    CHILLER_BACNET_ADDR,
-                    CHILLER_BACNET_OBJ_ID,
-                    CHILLER_WRITE_VALUE,
-                    CHILLER_WRITE_PRIORITY,
+                    AHU_COOL_VALVE_BACNET_ADDR,
+                    AHU_COOL_VALVE_BACNET_OBJ_ID,
+                    AHU_COOL_VALVE_WRITE_VALUE,
+                    AHU_COOL_VALVE_WRITE_PRIORITY,
                 )
                 last_operation_time = current_time
             elif building_power and building_power <= POWER_THRESHOLD:
@@ -51,10 +57,10 @@ async def monitor_building_power(app):
                     f"Releasing control..."
                 )
                 await app.do_write(
-                    CHILLER_BACNET_ADDR,
-                    CHILLER_BACNET_OBJ_ID,
-                    CHILLER_RELEASE_VALUE,
-                    CHILLER_WRITE_PRIORITY,
+                    AHU_COOL_VALVE_BACNET_ADDR,
+                    AHU_COOL_VALVE_BACNET_OBJ_ID,
+                    AHU_COOL_VALVE_RELEASE_VALUE,
+                    AHU_COOL_VALVE_WRITE_PRIORITY,
                 )
                 last_operation_time = current_time
 
