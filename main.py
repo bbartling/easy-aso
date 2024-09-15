@@ -16,6 +16,7 @@ CHILLER_WRITE_PRIORITY = 10
 SLEEP_INTERVAL_SECONDS = 60
 DUTY_CYCLE_INTERVAL_SECONDS = 900  # 15 minutes
 
+
 async def monitor_building_power(app):
     last_operation_time = 0  # Initialized to 0
 
@@ -59,8 +60,10 @@ async def monitor_building_power(app):
 
         await asyncio.sleep(SLEEP_INTERVAL_SECONDS)
 
+
 async def main():
     await EasyASO().run(monitor_building_power)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

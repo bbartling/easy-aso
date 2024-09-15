@@ -249,7 +249,9 @@ class SampleCmd(Cmd):
             print(f"Discovering device {instance_id}...")
 
             try:
-                device_address, object_list, names_list = await self.do_point_discovery(instance_id)
+                device_address, object_list, names_list = await self.do_point_discovery(
+                    instance_id
+                )
 
                 if device_address is None or not object_list:
                     print(f"No points found for device {instance_id}, skipping...")
@@ -269,18 +271,28 @@ class SampleCmd(Cmd):
                     object_identifier = f"{obj_type},{obj_id}"
                     point_name = names_list[index]
                     total_points += 1  # Increment the total points count
-                    print(f"Checking if {object_identifier} ({point_name}) supports priority array")
+                    print(
+                        f"Checking if {object_identifier} ({point_name}) supports priority array"
+                    )
 
                     try:
-                        priority_array = await self.do_read_point_priority_arr(device_address, (obj_type, obj_id))
+                        priority_array = await self.do_read_point_priority_arr(
+                            device_address, (obj_type, obj_id)
+                        )
 
                         if priority_array is None:
-                            print(f"No priority array found for {object_identifier}, skipping...")
-                            points_without_priority_array += 1  # Increment points without priority array
+                            print(
+                                f"No priority array found for {object_identifier}, skipping..."
+                            )
+                            points_without_priority_array += (
+                                1  # Increment points without priority array
+                            )
                             continue  # Skip this point if priority array is not supported
 
                         prior_array_index = 0
-                        points_with_priority_array += 1  # Increment points with priority array
+                        points_with_priority_array += (
+                            1  # Increment points with priority array
+                        )
 
                         # Simplify the priority array to only include priority, type, and value
                         for item in priority_array:
@@ -289,7 +301,10 @@ class SampleCmd(Cmd):
 
                             # Only keep the entries with non-null values
                             if type_ != "null":
-                                value_str = {"data_as_float": float(value), "raw_data_type": value}
+                                value_str = {
+                                    "data_as_float": float(value),
+                                    "raw_data_type": value,
+                                }
                                 point_data = {
                                     "priority_level": prior_array_index + 1,
                                     "object_identifier": object_identifier,
@@ -303,11 +318,17 @@ class SampleCmd(Cmd):
 
                     except Exception as e:
                         # Check for 'unknown-property' or other specific exceptions to provide a detailed error message
-                        if 'unknown-property' in str(e):
-                            print(f"{object_identifier} ({point_name}) does not support priority array, skipping...")
-                            points_without_priority_array += 1  # Increment points without priority array
+                        if "unknown-property" in str(e):
+                            print(
+                                f"{object_identifier} ({point_name}) does not support priority array, skipping..."
+                            )
+                            points_without_priority_array += (
+                                1  # Increment points without priority array
+                            )
                         else:
-                            print(f"Error processing {object_identifier} ({point_name}): {e}")
+                            print(
+                                f"Error processing {object_identifier} ({point_name}): {e}"
+                            )
                         continue  # Skip to the next point if there's an error
 
                 # Only save the device data to a file if there are points with valid priority arrays
@@ -317,7 +338,9 @@ class SampleCmd(Cmd):
                         yaml.dump(device_data, file, default_flow_style=False)
                     print(f"Device {instance_id} data saved to {filename}")
                 else:
-                    print(f"No points with non-null values for device {instance_id}, skipping file save.")
+                    print(
+                        f"No points with non-null values for device {instance_id}, skipping file save."
+                    )
 
             except TimeoutError as timeout_err:
                 print(f"Timeout occurred for device {instance_id}: {timeout_err}")
@@ -331,7 +354,6 @@ class SampleCmd(Cmd):
         print(f"Points Supporting Priority Array: {points_with_priority_array}")
         print(f"Points Not Supporting Priority Array: {points_without_priority_array}")
         print("=" * 50)
-
 
     async def do_read_point_priority_arr(
         self,
