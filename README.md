@@ -45,6 +45,23 @@ Why cant a BAS be free?
 
 ![Schematic of Python script deployment](https://raw.githubusercontent.com/bbartling/easy-aso/develop/new_building.png)
 
+## Getting Started with easy-aso
+Follow the directions below to get the `easy-aso` project on your local linux machine. Until the project is available on PyPI, you can install it locally by following the steps below.
+
+### Step 1: Clone the Repository
+First, clone the `easy-aso` repository to your local machine:
+```bash
+git clone https://github.com/bbartling/easy-aso
+```
+### Step 2: Install the Package Locally
+Navigate into the project directory and install it using `pip`. This will make the `easy-aso` package available in your Python environment.
+```bash
+cd easy-aso
+pip install .
+```
+See examples directory for how to run files with Python.
+* **TODO** - make tutorial for the fake BACnet device that runs on a rasp pi and running example scripts.
+
 ## Cybersecurity Disclaimer
 
 Easy ASO is designed as an operations technology (OT) application with no built-in cloud connectivity but it is fully capable of anything programmed in Python. Any implementation of cloud connectivity for this app is the responsibility of the user. It is crucial to understand the cybersecurity implications of sending bi-directional signals to building systems.
