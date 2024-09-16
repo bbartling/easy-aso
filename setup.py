@@ -7,12 +7,12 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/bbartling/easy-aso",
-    author="Your Name",
+    author="Ben Bartling",
     author_email="ben.bartling@gmail.com",
     license="MIT",
     packages=find_packages(),
     install_requires=[
-        "bacpypes3", "iffaddr"
+        "bacpypes3", "ifaddr"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
