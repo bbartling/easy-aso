@@ -34,6 +34,12 @@ class EasyASO:
             f"Commandable Binary Value Object initialized: {self.optimization_enabled_bv}"
         )
 
+    def get_optimization_enabled_status(self):
+        """
+        Getter method to return the optimization enabled status as a boolean.
+        """
+        return bool(self.optimization_enabled_bv.presentValue)
+
     async def create_application(self):
         # Create an application instance and add the commandable binary value object
         self.app = Application.from_args(self.args)

@@ -3,30 +3,23 @@ import logging
 import random
 from bacpypes3.argparse import SimpleArgumentParser
 from bacpypes3.app import Application
-from bacpypes3.local.analog import (
-    AnalogValueObject,
-    AnalogInputObject,
-    AnalogOutputObject,
-)
+from bacpypes3.local.analog import AnalogValueObject, AnalogInputObject, AnalogOutputObject
 from bacpypes3.local.binary import BinaryInputObject, BinaryOutputObject
 from bacpypes3.local.cmd import Commandable
 from bacpypes3.object import MultiStateValueObject  # Import for multi-state
 from bacpypes3.primitivedata import Enumerated  # For multi-state-like behavior
 
-"""
+'''
 $ python fake_ahu_sys.py --name BensFakeAhu --instance 3456789
-"""
+'''
 
 UPDATE_INTERVAL_SECONDS = 20
-
 
 class CommandableAnalogValueObject(Commandable, AnalogValueObject):
     """Commandable Analog Value Object"""
 
-
 class CommandableMultiStateValueObject(Commandable, MultiStateValueObject):
     """Commandable Multi-State Value Object"""
-
 
 class FakeAHUApplication:
     def __init__(self, args):
@@ -40,42 +33,42 @@ class FakeAHUApplication:
                 objectName="DAP-P",
                 presentValue=1.0,
                 units="inchesOfWater",
-                description="AHU Duct Pressure",
+                description="AHU Duct Pressure"
             ),
             "SA-T": AnalogInputObject(
                 objectIdentifier=("analogInput", 2),
                 objectName="SA-T",
                 presentValue=75.0,
                 units="degreesFahrenheit",
-                description="AHU Supply Air Temp",
+                description="AHU Supply Air Temp"
             ),
             "MA-T": AnalogInputObject(
                 objectIdentifier=("analogInput", 3),
                 objectName="MA-T",
                 presentValue=72.0,
                 units="degreesFahrenheit",
-                description="AHU Mixed Air Temp",
+                description="AHU Mixed Air Temp"
             ),
             "RA-T": AnalogInputObject(
                 objectIdentifier=("analogInput", 4),
                 objectName="RA-T",
                 presentValue=70.0,
                 units="degreesFahrenheit",
-                description="AHU Return Air Temp",
+                description="AHU Return Air Temp"
             ),
             "SA-FLOW": AnalogInputObject(
                 objectIdentifier=("analogInput", 5),
                 objectName="SA-FLOW",
                 presentValue=1000.0,
                 units="cubicFeetPerMinute",
-                description="Supply Air Flow",
+                description="Supply Air Flow"
             ),
             "OA-T": AnalogInputObject(
                 objectIdentifier=("analogInput", 6),
                 objectName="OA-T",
                 presentValue=85.0,
                 units="degreesFahrenheit",
-                description="Outside Air Temperature (Local)",
+                description="Outside Air Temperature (Local)"
             ),
             # Building electrical power
             "ELEC-PWR": AnalogInputObject(
@@ -83,7 +76,7 @@ class FakeAHUApplication:
                 objectName="ELEC-PWR",
                 presentValue=150.0,  # Initial value
                 units="kilowatts",
-                description="Building Electrical Power",
+                description="Building Electrical Power"
             ),
             # VAV Zone Analog Inputs
             **{
@@ -92,7 +85,7 @@ class FakeAHUApplication:
                     objectName=f"VAV-{i}-ZN-T",
                     presentValue=75.0,
                     units="degreesFahrenheit",
-                    description=f"VAV {i} Zone Air Temperature",
+                    description=f"VAV {i} Zone Air Temperature"
                 )
                 for i in range(1, 6)
             },
@@ -102,10 +95,11 @@ class FakeAHUApplication:
                     objectName=f"VAV-{i}-DPR-O",
                     presentValue=50.0,
                     units="percent",
-                    description=f"VAV {i} Air Damper Position",
+                    description=f"VAV {i} Air Damper Position"
                 )
                 for i in range(1, 6)
             },
+
             # Analog Outputs
             "SF-O": CommandableAnalogValueObject(
                 objectIdentifier=("analogOutput", 1),
@@ -113,7 +107,7 @@ class FakeAHUApplication:
                 presentValue=50.0,
                 units="percent",
                 covIncrement=1.0,
-                description="Supply Fan Speed Command",
+                description="Supply Fan Speed Command"
             ),
             "HTG-O": CommandableAnalogValueObject(
                 objectIdentifier=("analogOutput", 2),
@@ -121,7 +115,7 @@ class FakeAHUApplication:
                 presentValue=0.0,
                 units="percent",
                 covIncrement=1.0,
-                description="Heating Valve Command",
+                description="Heating Valve Command"
             ),
             "CLG-O": CommandableAnalogValueObject(
                 objectIdentifier=("analogOutput", 3),
@@ -129,8 +123,9 @@ class FakeAHUApplication:
                 presentValue=0.0,
                 units="percent",
                 covIncrement=1.0,
-                description="Cooling Valve Command",
+                description="Cooling Valve Command"
             ),
+
             # Analog Values
             "DAP-SP": CommandableAnalogValueObject(
                 objectIdentifier=("analogValue", 1),
@@ -138,7 +133,7 @@ class FakeAHUApplication:
                 presentValue=1.0,
                 units="inchesOfWater",
                 covIncrement=0.1,
-                description="AHU Duct Pressure Setpoint",
+                description="AHU Duct Pressure Setpoint"
             ),
             "OAT-NETWORK": CommandableAnalogValueObject(
                 objectIdentifier=("analogValue", 2),
@@ -146,34 +141,46 @@ class FakeAHUApplication:
                 presentValue=85.0,
                 units="degreesFahrenheit",
                 covIncrement=0.1,
-                description="Outside Air Temperature (Network)",
+                description="Outside Air Temperature (Network)"
             ),
+            "LIGHTING-O": CommandableAnalogValueObject(
+                objectIdentifier=("analogValue", 3),
+                objectName="LIGHTING-O",
+                presentValue=85.0,
+                units="percent",
+                covIncrement=0.1,
+                description="Lighting Output"
+            ),
+
             # VAV Zone Setpoints
             **{
                 f"VAV-{i}-ZN-SP": CommandableAnalogValueObject(
-                    objectIdentifier=("analogValue", 2 + i),
+                    objectIdentifier=("analogValue", 3 + i),
                     objectName=f"VAV-{i}-ZN-SP",
                     presentValue=75.0,  # Default setpoint
                     units="degreesFahrenheit",
                     covIncrement=0.5,
-                    description=f"VAV {i} Zone Air Temperature Setpoint",
+                    description=f"VAV {i} Zone Air Temperature Setpoint"
                 )
                 for i in range(1, 6)
             },
+
             # Binary Inputs
             "SF-S": BinaryInputObject(
                 objectIdentifier=("binaryInput", 1),
                 objectName="SF-S",
                 presentValue="active",
-                description="Supply Fan Status",
+                description="Supply Fan Status"
             ),
+
             # Binary Outputs
             "SF-C": BinaryOutputObject(
                 objectIdentifier=("binaryOutput", 1),
                 objectName="SF-C",
                 presentValue="inactive",  # Initial state
-                description="Supply Fan Command",
+                description="Supply Fan Command"
             ),
+
             # Multi-State Values
             "Occ-Schedule": CommandableMultiStateValueObject(
                 objectIdentifier=("multiStateValue", 1),
@@ -181,8 +188,8 @@ class FakeAHUApplication:
                 presentValue=1,  # Start as Occupied
                 numberOfStates=4,  # Occupied, UnOccupied, Standby, Not Set
                 stateText=["Not Set", "Occupied", "UnOccupied", "Standby"],
-                description="Occupancy Schedule",
-            ),
+                description="Occupancy Schedule"
+            )
         }
 
         # Add all objects to the BACnet application
@@ -216,12 +223,9 @@ class FakeAHUApplication:
                     new_value = random.choice(["active", "inactive"])
                     obj.presentValue = new_value
                     print(f"Updated {name}: {new_value}")
-                elif isinstance(
-                    obj, (AnalogValueObject, MultiStateValueObject, BinaryOutputObject)
-                ):
+                elif isinstance(obj, (AnalogValueObject, MultiStateValueObject, BinaryOutputObject)):
                     # Print the commandable objects as well
                     print(f"{name}: {obj.presentValue}")
-
 
 async def main():
     args = SimpleArgumentParser().parse_args()
@@ -232,7 +236,6 @@ async def main():
 
     # Run the BACnet server until interrupted
     await asyncio.Future()
-
 
 if __name__ == "__main__":
     try:
