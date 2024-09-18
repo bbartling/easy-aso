@@ -31,8 +31,8 @@ Why cant a BAS be free?
 
 ## In Progress
 - [x] Overhaul app code with bacpypes3
-- [ ] Test basic functionality on a test bench scenario with another fake BACnet app to simulate a fake AHU system and VAVs
-- [ ] Create unit tests for generic supervisory processes in BAS contracting, such as OA-Temp share and Occupancy Scheduling
+- [X] Test basic functionality with a fake BACnet app
+- [ ] Create units for algorithms
 - [ ] Publish the project as a Python library on PyPI
 - [ ] Add support for BACnet Read Multiple
 - [ ] Make tutorials for:
@@ -40,6 +40,7 @@ Why cant a BAS be free?
   - BAS global variable sharing
   - AHU Trim and Respond
   - Overnight building flush
+  - Overnight BACnet override realease bot
 
 ## Schematic: Python Script Deployment Behind the Firewall
 

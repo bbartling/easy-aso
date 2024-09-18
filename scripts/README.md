@@ -57,6 +57,7 @@ Discover BACnet devices using the `whois` command. You can specify a range of de
 
 ```bash
 > whois <low_limit> <high_limit>
+```
 
 ## Supervisory Logic Check
 Discover devices within a range of instance IDs and check the BACnet priority array to detect supervisory logic:

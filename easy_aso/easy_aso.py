@@ -8,6 +8,8 @@ from bacpypes3.argparse import SimpleArgumentParser
 from bacpypes3.local.cmd import Commandable
 from bacpypes3.local.binary import BinaryValueObject
 
+from easy_aso.algorithms.load_shed.load_shed_algorithm import load_shed
+
 
 class CommandableBinaryValueObject(Commandable, BinaryValueObject):
     """
@@ -165,3 +167,10 @@ class EasyASO:
         """
         object_type, instance_number = obj_id.split(",")
         return ObjectIdentifier((object_type.strip(), int(instance_number.strip())))
+
+
+    async def run_load_shed(self, config_dict):
+        """
+        Runs the load shedding algorithm with the given configuration.
+        """
+        await self.run(lambda app: load_shed(app, config_dict))
