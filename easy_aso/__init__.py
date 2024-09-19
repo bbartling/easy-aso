@@ -1,6 +1,6 @@
 from .easy_aso import EasyASO
 
-'''
+"""
 easy-aso/
 ├── easy_aso/
 │   ├── __init__.py
@@ -19,4 +19,4 @@ easy-aso/
 │   ├── test_load_shed_algorithm.py
 └── README.md
 
-'''
+"""

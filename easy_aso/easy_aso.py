@@ -168,7 +168,6 @@ class EasyASO:
         object_type, instance_number = obj_id.split(",")
         return ObjectIdentifier((object_type.strip(), int(instance_number.strip())))
 
-
     async def run_load_shed(self, config_dict):
         """
         Runs the load shedding algorithm with the given configuration.

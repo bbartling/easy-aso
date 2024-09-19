@@ -20,6 +20,7 @@ AHU_COOL_VALVE_WRITE_PRIORITY = 10
 SLEEP_INTERVAL_SECONDS = 60
 DUTY_CYCLE_INTERVAL_SECONDS = 900  # 15 minutes
 
+
 async def monitor_building_power(app):
     last_operation_time = 0  # Initialized to 0
 
@@ -30,7 +31,9 @@ async def monitor_building_power(app):
         print("Building power is", building_power)
 
         current_time = asyncio.get_event_loop().time()
-        time_calc = int(DUTY_CYCLE_INTERVAL_SECONDS - (current_time - last_operation_time))
+        time_calc = int(
+            DUTY_CYCLE_INTERVAL_SECONDS - (current_time - last_operation_time)
+        )
 
         if current_time - last_operation_time < DUTY_CYCLE_INTERVAL_SECONDS:
             print(
@@ -65,8 +68,10 @@ async def monitor_building_power(app):
 
         await asyncio.sleep(SLEEP_INTERVAL_SECONDS)
 
+
 async def main():
     await EasyASO().run(monitor_building_power)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

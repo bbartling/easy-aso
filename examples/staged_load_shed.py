@@ -53,8 +53,10 @@ config_dict = {
     ],
 }
 
+
 async def main():
     await EasyASO().run_load_shed(config_dict)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

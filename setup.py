@@ -11,9 +11,7 @@ setup(
     author_email="ben.bartling@gmail.com",
     license="MIT",
     packages=find_packages(),
-    install_requires=[
-        "bacpypes3", "ifaddr"
-    ],
+    install_requires=["bacpypes3", "ifaddr"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

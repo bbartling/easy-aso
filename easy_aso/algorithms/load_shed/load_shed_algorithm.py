@@ -2,20 +2,26 @@
 
 import asyncio
 
-async def load_shed(app, config_dict):
+
+async def load_shed(app, config_dict, max_iterations=None):
     last_operation_time = 0
     current_stage = 0
+    iterations = 0
     stages = config_dict.get("stages", [])
     sleep_interval_seconds = config_dict.get("SLEEP_INTERVAL_SECONDS", 60)
-    duty_cycle_interval_seconds = config_dict.get("DUTY_CYCLE_INTERVAL_SECONDS", 900)
     stage_up_down_timer = config_dict.get("STAGE_UP_DOWN_TIMER", 300)
     power_threshold = config_dict.get("POWER_THRESHOLD", 120.0)
     power_meter_bacnet_addr = config_dict.get("POWER_MTR_BACNET_ADDR")
     power_meter_bacnet_obj_id = config_dict.get("POWER_MTR_BACNET_OBJ_ID")
 
     while True:
-        # Using the getter to print the optimization enabled status as a boolean
-        print(f"Opt Enabled BV Status bool: {app.get_optimization_enabled_status()}")
+        # Optional limit for testing (break after certain iterations)
+        if max_iterations is not None and iterations >= max_iterations:
+            break
+
+        # Await the async mock call to get the optimization enabled status
+        opt_status = await app.get_optimization_enabled_status()
+        print(f"Opt Enabled BV Status bool: {opt_status}")
 
         # Read the building power
         building_power = await app.do_read(
@@ -25,7 +31,7 @@ async def load_shed(app, config_dict):
 
         current_time = asyncio.get_event_loop().time()
         time_elapsed = current_time - last_operation_time
-        
+
         # Calculate remaining time for stage up/down
         if time_elapsed < stage_up_down_timer:
             stage_timer_remaining = int(stage_up_down_timer - time_elapsed)
@@ -43,7 +49,6 @@ async def load_shed(app, config_dict):
                     await initiate_stage(app, stages[current_stage - 1])
                 else:
                     print(f"Stage {current_stage} is already at maximum level.")
-
             print(
                 f"Waiting for stage up/down timer.\n"
                 f"Time remaining: {stage_timer_remaining} seconds."
@@ -58,6 +63,7 @@ async def load_shed(app, config_dict):
             elif current_stage == 0:
                 print("All stages released. Building power is below threshold.")
 
+        iterations += 1
         await asyncio.sleep(sleep_interval_seconds)
 
 
@@ -73,6 +79,7 @@ async def initiate_stage(app, stage_config):
             point["write_value"],
             point["write_priority"],
         )
+
 
 async def release_stage(app, stage_config):
     """
