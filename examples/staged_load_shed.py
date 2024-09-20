@@ -10,8 +10,8 @@ config_dict = {
     "POWER_MTR_BACNET_OBJ_ID": "analog-input,7",
     "POWER_THRESHOLD": 120.0,
     "SLEEP_INTERVAL_SECONDS": 60,
-    "DUTY_CYCLE_INTERVAL_SECONDS": 900,
-    "STAGE_UP_DOWN_TIMER": 300,
+    "STAGE_UP_TIMER": 300,
+    "STAGE_DOWN_TIMER": 300,
     "stages": [
         {
             "description": "Stage 1: Reset zone setpoints upward.",
