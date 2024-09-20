@@ -38,13 +38,25 @@ Why cant a BAS be free?
 - [ ] Make tutorials for:
   - Electrical load shed example
   - BAS global variable sharing
-  - AHU Trim and Respond
+  - AHU duct static pressure and temperature setpoint trim and respond (T&R)
+  - AHU demand control ventilation based on G36 and ventilation calcs
+  - VAV box system occupied-standy with occupancy integration to HVAC
   - Overnight building flush
   - Overnight BACnet override realease bot
+  - Heat pump system cold weather staggered start for electrical power management
+  - Electrical load shift
 
-## Schematic: Python Script Deployment Behind the Firewall
+## Future
+- [ ] Explore updating the fake BACnet app by integrating the [BOPTEST](https://ibpsa.github.io/project1-boptest/) project to simulate realistic physics, allowing for safe, non-production testing of easy-aso.
 
+
+## Schematics: 
+
+Easy-aso always operates behind the firewall and can operate with an IoT integration to the building systems.
 ![Schematic of Python script deployment](https://raw.githubusercontent.com/bbartling/easy-aso/develop/new_building.png)
+
+Easy-aso can also operate just fine without an IoT integration to the building systems which would just be traditional operations (OT) technology systems that do not have access to the internet.
+![Schematic of Python script deployment traditional](https://raw.githubusercontent.com/bbartling/easy-aso/develop/traditional_building.png)
 
 ## Getting Started with easy-aso
 Follow the directions below to get the `easy-aso` project on your local linux machine. Until the project is available on PyPI, you can install it locally by following the steps below.
@@ -60,24 +72,18 @@ Navigate into the project directory and install it using `pip`. This will make t
 cd easy-aso
 pip install .
 ```
-See examples directory for how to run files with Python.
-* **TODO** - make tutorial for the fake BACnet device that runs on a rasp pi and running example scripts.
 
 ## Cybersecurity Disclaimer
 
 Easy ASO is designed as an operations technology (OT) application with no built-in cloud connectivity but it is fully capable of anything programmed in Python. Any implementation of cloud connectivity for this app is the responsibility of the user. It is crucial to understand the cybersecurity implications of sending bi-directional signals to building systems.
 
 **Security Best Practices**:
-- Adhere to the highest cybersecurity standards, including network hardening, secure configurations, and regular security audits.
-- Involve your organization's IT department when implementing cloud connectivity to ensure compliance with security policies.
-- Implement access controls, encryption, and secure communication protocols to protect building systems from unauthorized access or cyberattacks.
-
-**Responsibility**:
-The creator of this app and its affiliates take no responsibility for damage to equipment, property, or people resulting from inadequate cybersecurity practices. The provided examples do not include cloud connectivity to minimize risk. Implementing cloud connectivity is at the user's discretion and should be done with the utmost care and adherence to industry security standards.
-
-**Important Note**:
-For any scenarios involving cloud-based control of building systems, it is highly recommended to work closely with cybersecurity professionals to secure all communication channels and minimize potential risks.
-
+- Ensure the safety of your systems by following recommended cybersecurity best practices, including network, VPN, and VM access hardening, secure configurations, and routine security checks.
+- Work closely with the IT team when enabling cloud connectivity to ensure it complies with your organization's security policies.
+- Involve IT in all stages of the project and address any issues related to the implementation of easy-aso.
+- Safeguard building control systems by utilizing access controls, encryption, and secure communication protocols to prevent unauthorized access.
+- Act in the capacity of an ICS security specialist on behalf of your client, and promptly report any vulnerabilities or issues you discover.
+- Develop an incident response plan to ensure the project is prepared for any potential security breaches, enabling swift and effective action from the incident response team should an issue arise during the implementation of easy-aso.
 
 ## License:
 【MIT License】
