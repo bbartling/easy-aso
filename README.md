@@ -13,7 +13,10 @@ By automating BACnet property reads and writes, Easy ASO enables users to implem
 - [x] Read
 - [x] Write
 
-## `Tester.py` inside the scripts directory for exploring a remote BACnet site via the bacpypes3 console to aid in the setup of `easy-aso`
+## Exploring Remote BACnet Sites with `tester.py`
+The `tester.py` script, located in the scripts directory, provides a utility for exploring a remote BACnet site via the bacpypes3 console. This tool is designed to assist in the setup and configuration of the easy-aso project, streamlining the integration process.
+
+For detailed information and instructions on using the `Tester.py` script, please refer to the scripts README: https://github.com/bbartling/easy-aso/blob/develop/scripts/README.md.
 
 - [x] Read Property (`read_property`)
 - [x] Write Property (`write_property`)

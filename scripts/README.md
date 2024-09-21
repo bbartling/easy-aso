@@ -65,22 +65,6 @@ Discover BACnet devices using the `whois` command. You can specify a range of de
 ![Whois GIF](https://raw.githubusercontent.com/bbartling/easy-aso/develop/images/whois.gif)
 
 
-## Supervisory Logic Check
-Discover devices within a range of instance IDs and check the BACnet priority array to detect supervisory logic:
-
-```bash
-> whois <low_limit> <high_limit>
-```
-
-Example:
-
-```bash
-> whois 10 110
-```
-
-![Whois GIF](https://raw.githubusercontent.com/bbartling/easy-aso/develop/images/whois.gif)
-
-
 ### Read Point Priority Array
 
 Check the priority array of a specific point:
@@ -177,12 +161,17 @@ Example:
 > write <device_address> <object_type>,<instance_id> <property_identifier> <value> <priority>
 ```
 
-Example:
+Example to write `present-value` at BACnet priority `10`:
 
 ```bash
 > write 32:18 analog-value,14 present-value 72.0 10
 ```
 
+Example to release `present-value` at BACnet priority `10` with a `null`:
+
+```bash
+> write 32:18 analog-value,14 present-value null 10
+```
 ### Other Commands
 
 - **Who-Has:**
