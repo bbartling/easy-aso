@@ -9,6 +9,9 @@ from bacpypes3.local.cmd import Commandable
 from bacpypes3.local.binary import BinaryValueObject
 
 from easy_aso.algorithms.load_shed.load_shed_algorithm import load_shed
+from easy_aso.algorithms.ahu_duct_static_reset.ahu_static_reset_algorithm import (
+    ahu_static_pressure_reset,
+)
 
 
 class CommandableBinaryValueObject(Commandable, BinaryValueObject):
@@ -173,3 +176,9 @@ class EasyASO:
         Runs the load shedding algorithm with the given configuration.
         """
         await self.run(lambda app: load_shed(app, config_dict))
+
+    async def run_ahu_static_pressure_reset(self, config_dict):
+        """
+        Runs the AHU Static Pressure Reset algorithm.
+        """
+        await self.run(lambda app: ahu_static_pressure_reset(app, config_dict))
