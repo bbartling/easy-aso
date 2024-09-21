@@ -49,6 +49,9 @@ You can access all available commands in the console by typing:
 > help
 ```
 
+![Help Menu GIF](https://raw.githubusercontent.com/bbartling/easy-aso/develop/images/help_menu.gif)
+
+
 Here are the most commonly used commands:
 
 ### Discover Devices
@@ -59,11 +62,14 @@ Discover BACnet devices using the `whois` command. You can specify a range of de
 > whois <low_limit> <high_limit>
 ```
 
+![Whois GIF](https://raw.githubusercontent.com/bbartling/easy-aso/develop/images/whois.gif)
+
+
 ## Supervisory Logic Check
 Discover devices within a range of instance IDs and check the BACnet priority array to detect supervisory logic:
 
 ```bash
-> supervisory_logic_checks <low_limit> <high_limit>
+> whois <low_limit> <high_limit>
 ```
 
 Example:
@@ -71,6 +77,9 @@ Example:
 ```bash
 > whois 10 110
 ```
+
+![Whois GIF](https://raw.githubusercontent.com/bbartling/easy-aso/develop/images/whois.gif)
+
 
 ### Read Point Priority Array
 
@@ -85,6 +94,7 @@ Example:
 ```bash
 > read_point_priority_arr 10.200.200.27 analog-value,8
 ```
+![Read OAT Prior Arr GIF](https://raw.githubusercontent.com/bbartling/easy-aso/develop/images/read_oat_prior_arr.gif)
 
 ### Read Multiple Points
 
@@ -113,6 +123,7 @@ Example:
 ```bash
 > supervisory_logic_checks 1 100
 ```
+![Supervisor Checks GIF](https://raw.githubusercontent.com/bbartling/easy-aso/develop/images/super_visor_checks.gif)
 
 ### Save Device Configuration
 
@@ -141,6 +152,7 @@ Example:
 ```bash
 > point_discovery 792000
 ```
+![Point Discovery VAV and AHU GIF](https://raw.githubusercontent.com/bbartling/easy-aso/develop/images/point_discovery_vav_and_ahu.gif)
 
 ### Reading and Writing Points
 
@@ -157,6 +169,7 @@ Example:
 ```bash
 > read 10.7.6.161/24:47820 analog-value,99 present-value
 ```
+![Read OAT GIF](https://raw.githubusercontent.com/bbartling/easy-aso/develop/images/read_oat.gif)
 
 #### Writing to a Point (with priority):
 

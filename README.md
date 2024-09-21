@@ -4,6 +4,8 @@ Easy ASO is a streamlined tool designed for Automated Supervisory Optimization (
 
 By automating BACnet property reads and writes, Easy ASO enables users to implement control strategies with ease, eliminating complexity and making optimization accessible and highly customizable. With Python as your tool, your creativity is the only limitation. Examples are designed to be 100 lines of code or less!
 
+**⚠️👷🚧🏗️ WARNING** - This repo is new and under construction, so some features are not fully developed yet but stay tuned!
+
 
 
 ## BACnet Services Supported
