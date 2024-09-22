@@ -10,8 +10,8 @@ from bacpypes3.local.binary import BinaryValueObject
 
 from easy_aso.algorithms.load_shed.load_shed_algorithm import load_shed
 from easy_aso.algorithms.ahu_duct_static_reset.ahu_static_reset_algorithm import (
-    ahu_static_pressure_reset,
-)
+    AHUStaticPressureReset,
+)  # Updated import
 
 
 class CommandableBinaryValueObject(Commandable, BinaryValueObject):
@@ -179,6 +179,10 @@ class EasyASO:
 
     async def run_ahu_static_pressure_reset(self, config_dict):
         """
-        Runs the AHU Static Pressure Reset algorithm.
+        Runs the AHU Static Pressure Reset algorithm using the refactored class.
         """
-        await self.run(lambda app: ahu_static_pressure_reset(app, config_dict))
+        # Create an instance of the AHUStaticPressureReset class
+        ahu_reset = AHUStaticPressureReset(config_dict)
+
+        # Run the algorithm
+        await self.run(lambda app: ahu_reset.run(app))

@@ -1,8 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock
 from easy_aso.algorithms.ahu_duct_static_reset.ahu_static_reset_algorithm import (
-    ahu_static_pressure_reset,
-    validate_ahu_config,
+    AHUStaticPressureReset,
     ConfigError,
 )
 
@@ -54,10 +53,13 @@ async def test_ahu_static_pressure_reset_ignore_highest():
         "AHU_STATIC_PRESSURE_PRIORITY": 8,  # Priority to use for BACnet writes
     }
 
-    # Run the algorithm
-    await ahu_static_pressure_reset(mock_app, config_dict, max_iterations=2)
+    # Create an instance of the class
+    ahu_reset = AHUStaticPressureReset(config_dict)
 
-    # Check that the highest damper (100%)
+    # Run the algorithm
+    await ahu_reset.run(mock_app, max_iterations=2)
+
+    # Check that the highest damper (100%),
     # was ignored and the remaining one (80%) was processed
     # 2 VAV boxes * 2 readings (damper + airflow)
     # per iteration, 2 iterations
@@ -70,5 +72,6 @@ def test_validate_ahu_config_bad():
         "SP0": 0.5,
     }
 
+    # Instantiate the class and ensure validation raises ConfigError for bad config
     with pytest.raises(ConfigError):
-        validate_ahu_config(bad_config)
+        AHUStaticPressureReset(bad_config)
