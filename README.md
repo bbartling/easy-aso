@@ -1,17 +1,41 @@
-# Easy ASO
+# Easy ASO: Command Your Building Systems with Precision
+Welcome to Easy ASO, the ultimate command tool for Automated Supervisory Optimization (ASO) of BACnet systems. 
+Much like commanding units in a strategy game, Easy ASO puts you at the helm of your building systems, empowering you to optimize performance, reduce energy consumption, and maintain comfort with ease.
 
-Easy ASO is a streamlined tool designed for Automated Supervisory Optimization (ASO) of BACnet systems. With simple configuration and intuitive commands, it simplifies the process of monitoring and adjusting building systems to optimize performance, reduce energy consumption, and maintain comfort levels.
+With intuitive controls and streamlined BACnet property reads and writes, Easy ASO is your base of operations. 
+By automating complex routines, you can deploy your control strategies with precision and efficiency, much like bot scripting in gaming industry. 
+The best part? The battle for energy efficiency doesn't require long scripts—examples are always under 100 lines of code!
 
-By automating BACnet property reads and writes, Easy ASO enables users to implement control strategies with ease, eliminating complexity and making optimization accessible and highly customizable. With Python as your tool, your creativity is the only limitation. Examples are designed to be 100 lines of code or less!
+## The Skeleton of Every Great Bot
+Every bot you create to control BACnet systems follows this simple `on_start` and `on_step` structure, ready to deploy your strategy in real-time very inspired by the [StarCraft II API Client for Python 3](https://github.com/BurnySc2/python-sc2):
+
+```python
+class CustomHvacBot(EasyASO):
+    async def on_start(self):
+        # Custom start logic
+        print("CustomBot is deploying!")
+
+    async def on_step(self):
+        # Custom step logic
+        print("Executing step actions... The system is being optimized!")
+        await asyncio.sleep(60)
+
+# main.py
+async def main():
+    bot = CustomBot()
+    await bot.run()  # Automatically manages on_start and on_step, just like SC2!
+```
+
 
 **⚠️👷🚧🏗️ WARNING** - This repo is new and under construction, so some features are not fully developed yet but stay tuned!
-
 
 
 ## BACnet Services Supported
 
 - [x] Read
 - [x] Write
+- [ ] Read Multiple
+- [ ] Write Multiple
 
 ## Exploring Remote BACnet Sites with `tester.py`
 The `tester.py` script, located in the scripts directory, provides a utility for exploring a remote BACnet site via the bacpypes3 console. This tool is designed to assist in the setup and configuration of the easy-aso project, streamlining the integration process.
