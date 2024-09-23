@@ -30,7 +30,7 @@ class CustomHvacBot(EasyASO):
 # main.py
 async def main():
     bot = CustomBot()
-    await bot.run()  # Automatically manages on_start and on_step, just like SC2!
+    await bot.run()  # Automatically manages on_start, on_step, and on_stop, just like SC2!
 ```
 
 
