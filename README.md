@@ -13,12 +13,19 @@ Every bot you create to control BACnet systems follows this simple `on_start` an
 class CustomHvacBot(EasyASO):
     async def on_start(self):
         # Custom start logic
-        print("CustomBot is deploying!")
+	sensor = await self.do_read(BACNET_ADDR, BACNET_OBJ_ID)
+        print("CustomBot is deploying! Read in some value")
 
     async def on_step(self):
         # Custom step logic
+	sensor_value_best = await self.do_write(BACNET_ADDR, BACNET_OBJ_ID, 55.0)
         print("Executing step actions... The system is being optimized!")
         await asyncio.sleep(60)
+
+    async def on_stop(self):
+        # Custom stop logic
+	sensor_release = await self.do_write(BACNET_ADDR, BACNET_OBJ_ID, 'null')
+        print("Executing stop actions... The system is released back to normal!")
 
 # main.py
 async def main():
