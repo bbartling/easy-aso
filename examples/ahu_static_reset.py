@@ -1,13 +1,10 @@
 import asyncio
 from easy_aso import EasyASO
-from easy_aso.algorithms.ahu_duct_static_reset.ahu_static_reset_algorithm import (
-    ahu_static_pressure_reset,
-)
 
 
 """
 G36 AHU duct static pressure reset
-NOT tested yet
+Dont use a make over coming soon
 """
 
 

@@ -640,6 +640,8 @@ class SampleCmd(Cmd):
             return
 
         try:
+            print("address ", address)
+            print("parameter_list ", parameter_list)
             # Perform the read property multiple operation
             response = await app.read_property_multiple(address, parameter_list)
         except ErrorRejectAbortNack as err:

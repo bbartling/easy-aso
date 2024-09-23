@@ -1,18 +1,20 @@
 import asyncio
+from typing import Callable, List, Any, Optional, Tuple
+
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import ObjectIdentifier, Null
-from bacpypes3.apdu import ErrorRejectAbortNack
+from bacpypes3.apdu import (
+    ErrorRejectAbortNack,
+    PropertyReference,
+    PropertyIdentifier,
+    ErrorType,
+)
 from bacpypes3.constructeddata import AnyAtomic
 from bacpypes3.app import Application
 from bacpypes3.argparse import SimpleArgumentParser
 from bacpypes3.local.cmd import Commandable
 from bacpypes3.local.binary import BinaryValueObject
-
-from easy_aso.algorithms.load_shed.load_shed_algorithm import load_shed
-from easy_aso.algorithms.ahu_duct_static_reset.ahu_static_reset_algorithm import (
-    AHUStaticPressureReset,
-)  # Updated import
-
+from bacpypes3.vendor import get_vendor_info
 
 class CommandableBinaryValueObject(Commandable, BinaryValueObject):
     """
@@ -58,6 +60,36 @@ class EasyASO:
         while True:
             await asyncio.sleep(1)
 
+    async def run(self, custom_task):
+        """
+        Starts the EasyASO application and runs the custom monitoring task.
+        """
+        await self.create_application()  # Ensure application is created
+        await asyncio.gather(
+            self.update_server(),  # Runs server updates in the background
+            custom_task(self),  # Runs the custom task (e.g., monitoring logic)
+        )
+
+    def _convert_to_address(self, address: str) -> Address:
+        """
+        Convert a string to a BACnet Address object.
+        """
+        return Address(address)
+
+    def _convert_to_object_identifier(self, obj_id: str) -> ObjectIdentifier:
+        """
+        Convert a string to a BACnet ObjectIdentifier.
+        """
+        object_type, instance_number = obj_id.split(",")
+        return ObjectIdentifier((object_type.strip(), int(instance_number.strip())))
+    
+    def parse_property_identifier(self, property_identifier):
+        # Example parsing logic (modify as needed for your use case)
+        if "," in property_identifier:
+            prop_id, prop_index = property_identifier.split(",")
+            return prop_id.strip(), int(prop_index.strip())
+        return property_identifier, None
+
     async def do_read(
         self, address: str, object_identifier: str, property_identifier="present-value"
     ):
@@ -89,13 +121,6 @@ class EasyASO:
                 f"Unexpected error while reading property: {e} - Address: {address}, Object ID: {object_identifier}, Property Identifier: {property_identifier}"
             )
             return None
-
-    def parse_property_identifier(self, property_identifier):
-        # Example parsing logic (modify as needed for your use case)
-        if "," in property_identifier:
-            prop_id, prop_index = property_identifier.split(",")
-            return prop_id.strip(), int(prop_index.strip())
-        return property_identifier, None
 
     async def do_write(
         self,
@@ -148,41 +173,111 @@ class EasyASO:
                 f"Unexpected error while writing property: {e} - Value attempted: {value}"
             )
 
-    async def run(self, custom_task):
+
+
+    async def do_rpm(
+        self,
+        address: Address,
+        *args: str,
+    ):
         """
-        Starts the EasyASO application and runs the custom monitoring task.
+        Read Property Multiple (RPM) method to read multiple BACnet properties using vendor info.
+        Returns a list of dictionaries with object identifiers, property identifiers,
+        and either the value or a string describing an error.
         """
-        await self.create_application()  # Ensure application is created
-        await asyncio.gather(
-            self.update_server(),  # Runs server updates in the background
-            custom_task(self),  # Runs the custom task (e.g., monitoring logic)
+        print(f"Received arguments for RPM: {args}")
+        args_list: List[str] = list(args)
+
+        # Convert address string to BACnet Address object
+        address_obj = self._convert_to_address(address)
+
+        # Get device info from cache
+        device_info = await self.app.device_info_cache.get_device_info(address_obj)
+
+        # Look up vendor information
+        vendor_info = get_vendor_info(
+            device_info.vendor_identifier if device_info else 0
         )
 
-    def _convert_to_address(self, address: str) -> Address:
-        """
-        Convert a string to a BACnet Address object.
-        """
-        return Address(address)
+        parameter_list = []
+        while args_list:
+            # Translate the object identifier using vendor information
+            obj_id_str = args_list.pop(0)
+            object_identifier = vendor_info.object_identifier(obj_id_str)
+            object_class = vendor_info.get_object_class(object_identifier[0])
 
-    def _convert_to_object_identifier(self, obj_id: str) -> ObjectIdentifier:
-        """
-        Convert a string to a BACnet ObjectIdentifier.
-        """
-        object_type, instance_number = obj_id.split(",")
-        return ObjectIdentifier((object_type.strip(), int(instance_number.strip())))
+            if not object_class:
+                print(f"Unrecognized object type: {object_identifier}")
+                return [{"error": f"Unrecognized object type: {object_identifier}"}]
 
-    async def run_load_shed(self, config_dict):
-        """
-        Runs the load shedding algorithm with the given configuration.
-        """
-        await self.run(lambda app: load_shed(app, config_dict))
+            # Save this object identifier as a parameter
+            parameter_list.append(object_identifier)
 
-    async def run_ahu_static_pressure_reset(self, config_dict):
-        """
-        Runs the AHU Static Pressure Reset algorithm using the refactored class.
-        """
-        # Create an instance of the AHUStaticPressureReset class
-        ahu_reset = AHUStaticPressureReset(config_dict)
+            property_reference_list = []
+            while args_list:
+                # Parse the property reference using vendor info
+                property_reference = PropertyReference(
+                    propertyIdentifier=args_list.pop(0),
+                    vendor_info=vendor_info,
+                )
+                print(f"Property reference: {property_reference}")
 
-        # Run the algorithm
-        await self.run(lambda app: ahu_reset.run(app))
+                # Check if the property is known
+                if property_reference.propertyIdentifier not in (
+                    PropertyIdentifier.all,
+                    PropertyIdentifier.required,
+                    PropertyIdentifier.optional,
+                ):
+                    property_type = object_class.get_property_type(
+                        property_reference.propertyIdentifier
+                    )
+                    print(f"Property type: {property_type}")
+
+                    if not property_type:
+                        print(f"Unrecognized property: {property_reference.propertyIdentifier}")
+                        return [{"error": f"Unrecognized property: {property_reference.propertyIdentifier}"}]
+
+                # Save this property reference as a parameter
+                property_reference_list.append(property_reference)
+
+                # Break if the next thing is an object identifier
+                if args_list and (":" in args_list[0] or "," in args_list[0]):
+                    break
+
+            # Save the property reference list as a parameter
+            parameter_list.append(property_reference_list)
+
+        if not parameter_list:
+            print("Object identifier expected.")
+            return [{"error": "Object identifier expected."}]
+
+        try:
+            # Perform the read property multiple operation
+            response = await self.app.read_property_multiple(address_obj, parameter_list)
+        except ErrorRejectAbortNack as err:
+            print(f"Error during RPM: {err}")
+            return [{"error": f"Error during RPM: {err}"}]
+
+        # Prepare the response with either property values or error messages
+        result_list = []
+        for (
+            object_identifier,
+            property_identifier,
+            property_array_index,
+            property_value,
+        ) in response:
+            result = {
+                "object_identifier": object_identifier,
+                "property_identifier": property_identifier,
+                "property_array_index": property_array_index,
+            }
+            if isinstance(property_value, ErrorType):
+                result["value"] = f"Error: {property_value.errorClass}, {property_value.errorCode}"
+            else:
+                result["value"] = property_value
+
+            result_list.append(result)
+
+        print("result_list ",result_list)
+
+        return result_list
