@@ -18,7 +18,8 @@ class CustomHvacBot(EasyASO):
 
     async def on_step(self):
         # Custom step logic
-	sensor_value_best = await self.do_write(BACNET_ADDR, BACNET_OBJ_ID, 55.0)
+	sensor_value_best = sensor + 5.0
+	await self.do_write(BACNET_ADDR, BACNET_OBJ_ID, sensor_value_best)
         print("Executing step actions... The system is being optimized!")
         await asyncio.sleep(60)
 
