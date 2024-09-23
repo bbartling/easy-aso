@@ -1,4 +1,4 @@
-# Easy ASO: Command Your Building Systems with Precision
+# Easy ASO 🤖
 Welcome to Easy ASO, the ultimate command tool for Automated Supervisory Optimization (ASO) of BACnet systems. 
 Much like commanding units in a strategy game, Easy ASO puts you at the helm of your building systems, empowering you to optimize performance, reduce energy consumption, and maintain comfort with ease.
 
@@ -36,9 +36,13 @@ async def main():
 - [x] Write
 - [ ] Read Multiple
 - [ ] Write Multiple
+- [ ] Whois
+- [ ] Read Priority Array 
+- [ ] Anything else? 🤔
 
 ## Exploring Remote BACnet Sites with `tester.py`
-The `tester.py` script, located in the scripts directory, provides a utility for exploring a remote BACnet site via the bacpypes3 console. This tool is designed to assist in the setup and configuration of the easy-aso project, streamlining the integration process.
+The `tester.py` script, located in the scripts directory, provides a utility for exploring a remote BACnet site via the bacpypes3 console. 
+This tool is designed to assist in the setup and configuration of the `easy-aso` project, streamlining the integration process.
 
 For detailed information and instructions on using the `Tester.py` script, please refer to the scripts README: https://github.com/bbartling/easy-aso/blob/develop/scripts/README.md.
 
@@ -76,7 +80,7 @@ Why cant a BAS be free?
   - Electrical load shift
 
 ## Future
-- [ ] Explore updating the fake BACnet app by integrating the [BOPTEST](https://ibpsa.github.io/project1-boptest/) project to simulate realistic physics, allowing for safe, non-production testing of easy-aso.
+- [ ] Make tutorials for practicing bot script with a fake BACnet app allowing for safe, non-production testing of `easy-aso`.
 
 
 ## Schematics: 

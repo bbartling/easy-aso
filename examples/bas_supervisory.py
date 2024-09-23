@@ -10,13 +10,19 @@ AHU_IP = "192.168.0.103"
 BOILER_OUTSIDE_AIR_SENSOR = "analog-input,3"
 AHU_OUTSIDE_AIR_VALUE = "analog-value,10"
 
-# VAV box addresses on MSTP trunk 100
 VAV_ADDRESSES = [
-    "100:1", "100:2", "100:3", "100:4", "100:5", 
-    "100:6", "100:7", "100:8", "100:9", "100:10"
+    "100:1",
+    "100:2",
+    "100:3",
+    "100:4",
+    "100:5",
+    "100:6",
+    "100:7",
+    "100:8",
+    "100:9",
+    "100:10",
 ]
 
-# Setpoints and constants
 UNOCCUPIED_HEAT_SETPOINT = 55.0
 UNOCCUPIED_COOL_SETPOINT = 90.0
 OCCUPIED_HEAT_SETPOINT = 70.0
@@ -32,6 +38,9 @@ class BuildingBot(EasyASO):
 
     async def on_start(self):
         print("BuildingBot started! Monitoring building HVAC system.")
+
+    async def on_stop(self):
+        print("BuildingBot is stopping. Cleaning up resources...")
 
     def is_occupied(self):
         current_time = datetime.now().time()
@@ -69,7 +78,7 @@ class BuildingBot(EasyASO):
 
 async def main():
     bot = BuildingBot()
-    await bot.run(bot.on_step)
+    await bot.run()
 
 
 if __name__ == "__main__":

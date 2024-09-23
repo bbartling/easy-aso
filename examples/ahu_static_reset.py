@@ -3,28 +3,23 @@ from easy_aso import EasyASO
 
 # BACnet constants
 AHU_IP = "192.168.0.103"
-FAN_SPEED_BACNET_OBJ_ID = "analog-input,4"  # Fan speed object ID
+FAN_SPEED_BACNET_OBJ_ID = "analog-input,4"
 
-# VAV addresses
-VAV_ADDRESSES = [
-    "100:1", "100:2", "100:3", "100:4", "100:5"
-]
+VAV_ADDRESSES = ["100:1", "100:2", "100:3", "100:4", "100:5"]
 
-# Object IDs for VAVs
 DAMPER_POSITION_OBJ_ID = "analog-input,1"
 AIRFLOW_OBJ_ID = "analog-input,2"
 AIRFLOW_SETPOINT_OBJ_ID = "analog-input,3"
 
-# Static pressure control
 SP0 = 1.5  # Initial static pressure setpoint
 SPmin = 0.5  # Minimum static pressure
 SPmax = 3.0  # Maximum static pressure
-SPtrim = -0.1  # Pressure decrease when no reset requests
-SPres = 0.2  # Pressure increase per reset request
-SPres_max = 1.0  # Maximum allowable pressure increase
+SPtrim = -0.1
+SPres = 0.2
+SPres_max = 1.0
 I = 1  # Number of top dampers to ignore
 SLEEP_INTERVAL_SECONDS = 60
-FAN_MIN_SPEED = 15.0  # Minimum fan speed to consider fan "running"
+FAN_MIN_SPEED = 15.0  # Minimum fan speed
 
 
 class AHUBot(EasyASO):
@@ -38,15 +33,16 @@ class AHUBot(EasyASO):
 
     async def on_step(self):
         fan_running = await self.check_fan_running()
-
         if fan_running:
             print("Fan is running. Proceeding with pressure control.")
             vav_data = await self.read_vav_data()
             await self.adjust_static_pressure(vav_data)
         else:
             print("Fan is not running. Skipping pressure control this step.")
-
         await asyncio.sleep(SLEEP_INTERVAL_SECONDS)
+
+    async def on_stop(self):
+        print("AHU Bot stopping. Cleaning up resources...")
 
     async def check_fan_running(self):
         fan_speed = await self.do_read(AHU_IP, FAN_SPEED_BACNET_OBJ_ID)
@@ -63,7 +59,7 @@ class AHUBot(EasyASO):
 
     async def adjust_static_pressure(self, vav_data):
         total_reset_requests = 0
-        vav_data.sort(reverse=True, key=lambda x: x[0])  # Sort by damper position
+        vav_data.sort(reverse=True, key=lambda x: x[0])
 
         vav_data = vav_data[I:]  # Ignore top I VAVs
 
@@ -93,7 +89,7 @@ class AHUBot(EasyASO):
 
 async def main():
     bot = AHUBot()
-    await bot.run(bot.on_step)
+    await bot.run()
 
 
 if __name__ == "__main__":

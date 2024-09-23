@@ -22,38 +22,60 @@ class CustomBot(EasyASO):
         self.last_operation_time = 0
 
     async def on_start(self):
-        """Initialization logic for when the bot starts."""
         print("CustomBot started. Monitoring power consumption.")
-        # Perform any initial reads
-        initial_power = await self.do_read(POWER_MTR_BACNET_ADDR, POWER_MTR_BACNET_OBJ_ID)
+        initial_power = await self.do_read(
+            POWER_MTR_BACNET_ADDR, POWER_MTR_BACNET_OBJ_ID
+        )
         print(f"Initial power reading: {initial_power} kW")
 
     async def on_step(self):
-        """Main loop for the bot."""
         current_time = asyncio.get_event_loop().time()
-        power_reading = await self.do_read(POWER_MTR_BACNET_ADDR, POWER_MTR_BACNET_OBJ_ID)
+        power_reading = await self.do_read(
+            POWER_MTR_BACNET_ADDR, POWER_MTR_BACNET_OBJ_ID
+        )
         print(f"Current power reading: {power_reading} kW")
 
         if current_time - self.last_operation_time < DUTY_CYCLE_INTERVAL_SECONDS:
-            time_remaining = int(DUTY_CYCLE_INTERVAL_SECONDS - (current_time - self.last_operation_time))
-            print(f"Waiting for short cycle prevention. Time remaining: {time_remaining} seconds.")
+            time_remaining = int(
+                DUTY_CYCLE_INTERVAL_SECONDS - (current_time - self.last_operation_time)
+            )
+            print(
+                f"Waiting for short cycle prevention. Time remaining: {time_remaining} seconds."
+            )
         else:
             if power_reading > POWER_THRESHOLD:
-                print(f"Power {power_reading} exceeds threshold. Lowering AHU cool valve.")
-                await self.do_write(AHU_COOL_VALVE_BACNET_ADDR, AHU_COOL_VALVE_BACNET_OBJ_ID, AHU_COOL_VALVE_WRITE_VALUE, AHU_COOL_VALVE_WRITE_PRIORITY)
+                print(
+                    f"Power {power_reading} exceeds threshold. Lowering AHU cool valve."
+                )
+                await self.do_write(
+                    AHU_COOL_VALVE_BACNET_ADDR,
+                    AHU_COOL_VALVE_BACNET_OBJ_ID,
+                    AHU_COOL_VALVE_WRITE_VALUE,
+                    AHU_COOL_VALVE_WRITE_PRIORITY,
+                )
                 self.last_operation_time = current_time
             elif power_reading <= POWER_THRESHOLD:
-                print(f"Power {power_reading} is below threshold. Releasing control of AHU cool valve.")
-                await self.do_write(AHU_COOL_VALVE_BACNET_ADDR, AHU_COOL_VALVE_BACNET_OBJ_ID, AHU_COOL_VALVE_RELEASE_VALUE, AHU_COOL_VALVE_WRITE_PRIORITY)
+                print(
+                    f"Power {power_reading} is below threshold. Releasing control of AHU cool valve."
+                )
+                await self.do_write(
+                    AHU_COOL_VALVE_BACNET_ADDR,
+                    AHU_COOL_VALVE_BACNET_OBJ_ID,
+                    AHU_COOL_VALVE_RELEASE_VALUE,
+                    AHU_COOL_VALVE_WRITE_PRIORITY,
+                )
                 self.last_operation_time = current_time
 
         await asyncio.sleep(SLEEP_INTERVAL_SECONDS)
 
+    async def on_stop(self):
+        print("CustomBot is stopping. Cleaning up resources...")
 
-# main.py
+
 async def main():
     bot = CustomBot()
-    await bot.run()  # It will automatically handle on_start and on_step
+    await bot.run()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
