@@ -1,5 +1,5 @@
 import asyncio
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod  # Import ABC for abstract methods
 from typing import Callable, List, Any, Optional, Tuple
 
 from bacpypes3.pdu import Address
@@ -24,7 +24,7 @@ class CommandableBinaryValueObject(Commandable, BinaryValueObject):
     """
 
 
-class EasyASO(ABC):
+class EasyASO(ABC):  # Make EasyASO an abstract class
     def __init__(self, args=None):
         # Parse arguments
         self.args = args or SimpleArgumentParser().parse_args()
@@ -45,17 +45,17 @@ class EasyASO(ABC):
 
     @abstractmethod
     async def on_start(self):
-        """Custom start logic that must be implemented by subclasses"""
+        """Abstract method that must be implemented by subclasses for start logic"""
         pass
 
     @abstractmethod
     async def on_step(self):
-        """Custom step logic that must be implemented by subclasses"""
+        """Abstract method that must be implemented by subclasses for step logic"""
         pass
 
     @abstractmethod
     async def on_stop(self):
-        """Custom stop logic that must be implemented by subclasses"""
+        """Abstract method that must be implemented by subclasses for stop logic"""
         pass
 
     async def create_application(self):
@@ -71,37 +71,53 @@ class EasyASO(ABC):
         while True:
             await asyncio.sleep(1)
 
+    async def run_lifecycle(self):
+        """Runs the on_start, on_step, on_stop lifecycle."""
+        try:
+            await self.on_start()  # Call the subclass implementation of on_start
+            while True:
+                await self.on_step()  # Call the subclass implementation of on_step
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt detected. Stopping...")
+        finally:
+            await self.on_stop()  # Call the subclass implementation of on_stop
+
     async def run(self):
         """
-        Starts the EasyASO application and runs the custom lifecycle (on_start, on_step, on_stop).
+        Starts the EasyASO application and runs the lifecycle (on_start, on_step, on_stop).
         """
         await self.create_application()  # Ensure application is created
-
-        try:
-            await self.on_start()  # Run the custom on_start logic
-            while True:
-                await self.on_step()  # Continuously run the custom on_step logic
-        except KeyboardInterrupt:
-            # Handle graceful shutdown on stop signal
-            await self.on_stop()  # Run the custom on_stop logic
-        finally:
-            print("EasyASO shutting down...")
-
-    # BACnet-specific methods (do_read, do_write, etc.) remain the same...
+        await asyncio.gather(
+            self.update_server(),  # Runs server updates in the background
+            self.run_lifecycle(),  # Handles the lifecycle internally
+        )
 
     def _convert_to_address(self, address: str) -> Address:
-        """Convert a string to a BACnet Address object."""
+        """
+        Convert a string to a BACnet Address object.
+        """
         return Address(address)
 
     def _convert_to_object_identifier(self, obj_id: str) -> ObjectIdentifier:
-        """Convert a string to a BACnet ObjectIdentifier."""
+        """
+        Convert a string to a BACnet ObjectIdentifier.
+        """
         object_type, instance_number = obj_id.split(",")
         return ObjectIdentifier((object_type.strip(), int(instance_number.strip())))
+
+    def parse_property_identifier(self, property_identifier):
+        # Example parsing logic (modify as needed for your use case)
+        if "," in property_identifier:
+            prop_id, prop_index = property_identifier.split(",")
+            return prop_id.strip(), int(prop_index.strip())
+        return property_identifier, None
 
     async def do_read(
         self, address: str, object_identifier: str, property_identifier="present-value"
     ):
-        """Handles reading from a BACnet object."""
+        """
+        Handles reading from a BACnet object. Uses 'present-value' as default property identifier.
+        """
         try:
             address_obj = self._convert_to_address(address)
             object_id_obj = self._convert_to_object_identifier(object_identifier)
@@ -116,13 +132,17 @@ class EasyASO(ABC):
 
         except ErrorRejectAbortNack as e:
             print(f"Error reading property: {e}")
-            return {"error": f"Error reading property: {e}"}
+            return None
         except TypeError as e:
-            print(f"Type error while reading property: {e}")
-            return {"error": f"Type error while reading property: {e}"}
+            print(
+                f"Type error while reading property: {e} - Address: {address}, Object ID: {object_identifier}, Property Identifier: {property_identifier}"
+            )
+            return None
         except Exception as e:
-            print(f"Unexpected error while reading property: {e}")
-            return {"error": f"Unexpected error while reading property: {e}"}
+            print(
+                f"Unexpected error while reading property: {e} - Address: {address}, Object ID: {object_identifier}, Property Identifier: {property_identifier}"
+            )
+            return None
 
     async def do_write(
         self,
@@ -132,15 +152,20 @@ class EasyASO(ABC):
         priority: int = -1,
         property_identifier="present-value",
     ):
-        """Handles writing to a BACnet object."""
+        """
+        Handles writing to a BACnet object. Uses 'present-value' as default property identifier.
+        If value is 'null', it triggers a release using Null().
+        """
         try:
             address_obj = self._convert_to_address(address)
             object_id_obj = self._convert_to_object_identifier(object_identifier)
 
+            # Parse property identifier and index
             property_identifier, property_array_index = self.parse_property_identifier(
                 property_identifier
             )
 
+            # Handle 'null' values for release
             if value == "null":
                 if priority is None:
                     raise ValueError(
@@ -148,6 +173,7 @@ class EasyASO(ABC):
                     )
                 value = Null(())
 
+            # Write the property value
             response = await self.app.write_property(
                 address_obj,
                 object_id_obj,
@@ -162,19 +188,12 @@ class EasyASO(ABC):
 
         except ErrorRejectAbortNack as e:
             print(f"Error writing property: {e}")
-            return {"error": f"Error writing property: {e}"}
         except TypeError as e:
             print(f"Type error while writing property: {e} - Value attempted: {value}")
-            return {
-                "error": f"Type error while writing property: {e} - Value attempted: {value}"
-            }
         except Exception as e:
             print(
                 f"Unexpected error while writing property: {e} - Value attempted: {value}"
             )
-            return {
-                "error": f"Unexpected error while writing property: {e} - Value attempted: {value}"
-            }
 
     async def do_rpm(
         self,
