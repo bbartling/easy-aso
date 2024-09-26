@@ -1,11 +1,11 @@
 import asyncio
 from easy_aso import EasyASO
 
-RPM_INTERVAL_SECONDS = 60  # Interval in seconds
 
 """
 BACnet read multiple request
 """
+STEP_INTERVAL_SECONDS = 60
 
 
 class RPMBot(EasyASO):
@@ -22,7 +22,7 @@ class RPMBot(EasyASO):
         ]
 
         print("Starting RPM read...")
-        rpm_results = await self.do_rpm(rpm_address, *obj_props)
+        rpm_results = await self.bacnet_rpm(rpm_address, *obj_props)
 
         if rpm_results:
             for result in rpm_results:
@@ -32,7 +32,7 @@ class RPMBot(EasyASO):
 
                 print(f'"{obj_type},{obj_instance}", "{prop_id}", {value}"')
 
-        await asyncio.sleep(RPM_INTERVAL_SECONDS)
+        await asyncio.sleep(STEP_INTERVAL_SECONDS)
 
     async def on_stop(self):
         print("RPMBot is stopping. Cleaning up resources...")

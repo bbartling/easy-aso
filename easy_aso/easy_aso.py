@@ -112,7 +112,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
             return prop_id.strip(), int(prop_index.strip())
         return property_identifier, None
 
-    async def do_read(
+    async def bacnet_read(
         self, address: str, object_identifier: str, property_identifier="present-value"
     ):
         """
@@ -144,7 +144,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
             )
             return None
 
-    async def do_write(
+    async def bacnet_write(
         self,
         address: str,
         object_identifier: str,
@@ -195,7 +195,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
                 f"Unexpected error while writing property: {e} - Value attempted: {value}"
             )
 
-    async def do_rpm(
+    async def bacnet_rpm(
         self,
         address: Address,
         *args: str,
