@@ -59,7 +59,8 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
         pass
 
     async def create_application(self):
-        # Create an application instance and add the commandable binary value object
+        # Create an application instance
+        # and add the commandable binary value object
         self.app = Application.from_args(self.args)
         self.app.add_object(self.optimization_enabled_bv)
         print("Application and objects created and added.")
@@ -74,23 +75,28 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
     async def run_lifecycle(self):
         """Runs the on_start, on_step, on_stop lifecycle."""
         try:
-            await self.on_start()  # Call the subclass implementation of on_start
+            await self.on_start()
             while True:
-                await self.on_step()  # Call the subclass implementation of on_step
+                await self.on_step()
         except KeyboardInterrupt:
             print("KeyboardInterrupt detected. Stopping...")
         finally:
-            await self.on_stop()  # Call the subclass implementation of on_stop
+            await self.on_stop()
 
     async def run(self):
         """
-        Starts the EasyASO application and runs the lifecycle (on_start, on_step, on_stop).
+        Starts the EasyASO application
+        runs the lifecycle (on_start, on_step, on_stop).
         """
         await self.create_application()  # Ensure application is created
-        await asyncio.gather(
-            self.update_server(),  # Runs server updates in the background
-            self.run_lifecycle(),  # Handles the lifecycle internally
-        )
+        try:
+            await asyncio.gather(
+                self.update_server(),  # Runs BACnet server
+                self.run_lifecycle(),  # Handles the lifecycle internally
+            )
+        except asyncio.CancelledError:
+            print("Task cancelled, ensuring on_stop is called.")
+            await self.on_stop()  # Force on_stop to run if tasks are cancelled
 
     def _convert_to_address(self, address: str) -> Address:
         """
@@ -116,7 +122,8 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
         self, address: str, object_identifier: str, property_identifier="present-value"
     ):
         """
-        Handles reading from a BACnet object. Uses 'present-value' as default property identifier.
+        Handles reading from a BACnet object.
+        Uses 'present-value' as default property identifier.
         """
         try:
             address_obj = self._convert_to_address(address)
@@ -135,12 +142,14 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
             return None
         except TypeError as e:
             print(
-                f"Type error while reading property: {e} - Address: {address}, Object ID: {object_identifier}, Property Identifier: {property_identifier}"
+                f"Type error while reading property: {e} - Address: {address}, "
+                f"Object ID: {object_identifier}, Property Identifier: {property_identifier}"
             )
             return None
         except Exception as e:
             print(
-                f"Unexpected error while reading property: {e} - Address: {address}, Object ID: {object_identifier}, Property Identifier: {property_identifier}"
+                f"Unexpected error while reading property: {e} - Address: {address}, "
+                f"Object ID: {object_identifier}, Property Identifier: {property_identifier}"
             )
             return None
 
@@ -153,7 +162,8 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
         property_identifier="present-value",
     ):
         """
-        Handles writing to a BACnet object. Uses 'present-value' as default property identifier.
+        Handles writing to a BACnet object.
+        Uses 'present-value' as default property identifier.
         If value is 'null', it triggers a release using Null().
         """
         try:
@@ -210,6 +220,14 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
 
         # Convert address string to BACnet Address object
         address_obj = self._convert_to_address(address)
+
+        """ Note from Joel Bender on vendor and device caches
+        Simple read requests and responses are typically small enough that they don't require segmentation, 
+        and they are required services if the server supports segmentation or not.  
+        The device information cache contains the vendor identifier to help resolve names of custom types, 
+        the protocol services supported to know if RPM and other services are available, 
+        the maximum APDU size to see if a device can handle it at all.
+        """
 
         # Get device info from cache
         device_info = await self.app.device_info_cache.get_device_info(address_obj)

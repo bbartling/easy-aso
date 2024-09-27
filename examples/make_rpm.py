@@ -5,6 +5,15 @@ from easy_aso import EasyASO
 """
 BACnet read multiple request
 """
+
+RPM_ADDRESS = "10.200.200.233"  # BACnet device address
+BACNET_RPM_OBJ = [
+    "analog-input,1",
+    "present-value",
+    "analog-input,2",
+    "present-value",
+]
+
 STEP_INTERVAL_SECONDS = 60
 
 
@@ -13,16 +22,9 @@ class RPMBot(EasyASO):
         print("RPMBot started! Reading properties periodically.")
 
     async def on_step(self):
-        rpm_address = "10.200.200.233"  # BACnet device address
-        obj_props = [
-            "analog-input,1",
-            "present-value",
-            "analog-input,2",
-            "present-value",
-        ]
 
         print("Starting RPM read...")
-        rpm_results = await self.bacnet_rpm(rpm_address, *obj_props)
+        rpm_results = await self.bacnet_rpm(RPM_ADDRESS, *BACNET_RPM_OBJ)
 
         if rpm_results:
             for result in rpm_results:
