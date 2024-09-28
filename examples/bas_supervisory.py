@@ -103,7 +103,9 @@ class BuildingBot(EasyASO):
 
         # Insurance setpoint adjustments every 5 minutes
         if (current_time - self.last_release_time).total_seconds() >= 300:
-            print("300 seconds have passed. Adjusting setpoints for insurance purposes.")
+            print(
+                "300 seconds have passed. Adjusting setpoints for insurance purposes."
+            )
             await self.adjust_setpoints()
             self.last_release_time = current_time
 
@@ -113,7 +115,9 @@ class BuildingBot(EasyASO):
             self.last_outside_air_update = current_time
 
         # Periodically check and average VAV zone temps every 5 minutes (unoccupied only)
-        if not self.is_occupied() and (current_time - self.last_vav_temp_update) >= timedelta(seconds=300):
+        if not self.is_occupied() and (
+            current_time - self.last_vav_temp_update
+        ) >= timedelta(seconds=300):
             await self.average_vav_zone_temp_and_control_ahu()
             self.last_vav_temp_update = current_time
 
@@ -122,11 +126,15 @@ class BuildingBot(EasyASO):
         if self.is_occupied():
             self.heat_setpoint = OCCUPIED_HEAT_SETPOINT
             ahu_occupancy_value = 1  # Occupied
-            print("Building is occupied: Setting occupied setpoints and AHU to occupied mode.")
+            print(
+                "Building is occupied: Setting occupied setpoints and AHU to occupied mode."
+            )
         else:
             self.heat_setpoint = UNOCCUPIED_HEAT_SETPOINT
             ahu_occupancy_value = 2  # Unoccupied
-            print("Building is unoccupied: Setting unoccupied setpoints and AHU to unoccupied mode.")
+            print(
+                "Building is unoccupied: Setting unoccupied setpoints and AHU to unoccupied mode."
+            )
 
         for address in VAV_ADDRESSES:
             await self.bacnet_write(address, VAV_ZONE_SETPOINT, self.heat_setpoint, 16)
@@ -147,7 +155,9 @@ class BuildingBot(EasyASO):
 
         if temperatures:
             average_temp = sum(temperatures) / len(temperatures)
-            print(f"Average VAV zone temperature during unoccupied time: {average_temp}")
+            print(
+                f"Average VAV zone temperature during unoccupied time: {average_temp}"
+            )
             await self.bacnet_write(AHU_IP, AHU_ZONE_TEMP, average_temp, 16)
 
     async def release_all(self):
