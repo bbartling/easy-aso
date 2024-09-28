@@ -24,6 +24,11 @@ class RPMBot(EasyASO):
     async def on_step(self):
 
         print("Starting RPM read...")
+
+        # Get and print the optimization enabled status
+        optimization_status = self.get_optimization_enabled_status()
+        print(f"Optimization Enabled Status: {optimization_status}")
+
         rpm_results = await self.bacnet_rpm(RPM_ADDRESS, *BACNET_RPM_OBJ)
 
         if rpm_results:

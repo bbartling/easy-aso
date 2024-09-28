@@ -18,30 +18,39 @@ class CustomBot(EasyASO):
         print("CustomBot started!")
 
     async def on_step(self):
-
         print("Starting on_step")
 
-        random_bv = random.choice(["active", "inactive"])
-        print(f"For a fan command override, doing a {random_bv}...")
+        # Get and print the optimization enabled status
+        optimization_status = self.get_optimization_enabled_status()
+        print(f"Optimization Enabled Status: {optimization_status}")
 
-        random_float = random.uniform(0.0, 100.0)
-        print(f"For a valve percent command override, doing a {random_float}...")
+        # If optimization is not enabled, trigger a release of all overrides
+        if not optimization_status:
+            print("Optimization disabled, releasing all BACnet overrides.")
+            await self.release_all()
+        else:
+            # Continue with normal operation and random overrides
+            random_bv = random.choice(["active", "inactive"])
+            print(f"For a fan command override, doing a {random_bv}...")
 
-        # BACnet write for fan command
-        await self.bacnet_write(
-            BACNET_DEVICE_ADDR,
-            FAN_CMD_OBJ_ID,
-            random_bv,
-            BACNET_WRITE_PRIORITY,
-        )
+            random_float = random.uniform(0.0, 100.0)
+            print(f"For a valve percent command override, doing a {random_float}...")
 
-        # BACnet write for valve command
-        await self.bacnet_write(
-            BACNET_DEVICE_ADDR,
-            VALVE_CMD_OBJ_ID,
-            random_float,
-            BACNET_WRITE_PRIORITY,
-        )
+            # BACnet write for fan command
+            await self.bacnet_write(
+                BACNET_DEVICE_ADDR,
+                FAN_CMD_OBJ_ID,
+                random_bv,
+                BACNET_WRITE_PRIORITY,
+            )
+
+            # BACnet write for valve command
+            await self.bacnet_write(
+                BACNET_DEVICE_ADDR,
+                VALVE_CMD_OBJ_ID,
+                random_float,
+                BACNET_WRITE_PRIORITY,
+            )
 
         print("BACnet step completed.")
 
@@ -49,8 +58,14 @@ class CustomBot(EasyASO):
         await asyncio.sleep(STEP_INTERVAL_SECONDS)
 
     async def on_stop(self):
-        print("CustomBot is stopping. Release overrides!")
+        print("CustomBot is stopping. Releasing all BACnet overrides.")
+        await self.release_all()
 
+    async def release_all(self):
+        """
+        Releases all BACnet overrides by writing 'null' to the fan and valve.
+        """
+        print("Releasing fan override...")
         # Release fan override
         await self.bacnet_write(
             BACNET_DEVICE_ADDR,
@@ -59,6 +74,7 @@ class CustomBot(EasyASO):
             BACNET_WRITE_PRIORITY,
         )
 
+        print("Releasing valve override...")
         # Release valve override
         await self.bacnet_write(
             BACNET_DEVICE_ADDR,
@@ -66,6 +82,8 @@ class CustomBot(EasyASO):
             "null",  # BACnet release is a null string
             BACNET_WRITE_PRIORITY,
         )
+
+        print("All BACnet overrides have been released.")
 
 
 async def main():

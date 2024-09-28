@@ -21,6 +21,11 @@ class CustomBot(EasyASO):
     async def on_step(self):
 
         print("Starting ReadRequest on_step...")
+
+        # Get and print the optimization enabled status
+        optimization_status = self.get_optimization_enabled_status()
+        print(f"Optimization Enabled Status: {optimization_status}")
+
         # VAV box discharge air temp sensor
         sensor_value_pv = await self.bacnet_read(BACNET_DEVICE_ADDR, BACNET_OBJ_ID)
         print(sensor_value_pv)

@@ -1,6 +1,6 @@
 import asyncio
 from abc import ABC, abstractmethod  # Import ABC for abstract methods
-from typing import Callable, List, Any, Optional, Tuple
+from typing import List
 
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import ObjectIdentifier, Null
@@ -29,7 +29,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
         # Parse arguments
         self.args = args or SimpleArgumentParser().parse_args()
 
-        print(f"Arguments: {self.args}")
+        print(f"INFO: Arguments: {self.args}")
 
         # Create a commandable binary value object
         self.optimization_enabled_bv = CommandableBinaryValueObject(
@@ -40,7 +40,8 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
             description="Commandable binary value object",
         )
         print(
-            f"Commandable Binary Value Object initialized: {self.optimization_enabled_bv}"
+            "INFO: Commandable Binary Value Object initialized: ",
+            f"{self.optimization_enabled_bv}",
         )
 
     @abstractmethod
@@ -58,12 +59,18 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
         """Abstract method that must be implemented by subclasses for stop logic"""
         pass
 
+    def get_optimization_enabled_status(self):
+        """
+        Getter method to return the optimization enabled status as a boolean.
+        """
+        return bool(self.optimization_enabled_bv.presentValue)
+
     async def create_application(self):
         # Create an application instance
         # and add the commandable binary value object
         self.app = Application.from_args(self.args)
         self.app.add_object(self.optimization_enabled_bv)
-        print("Application and objects created and added.")
+        print("INFO: Application and objects created and added.")
 
     async def update_server(self):
         """
@@ -79,7 +86,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
             while True:
                 await self.on_step()
         except KeyboardInterrupt:
-            print("KeyboardInterrupt detected. Stopping...")
+            print("INFO: KeyboardInterrupt detected. Stopping...")
         finally:
             await self.on_stop()
 
@@ -95,7 +102,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
                 self.run_lifecycle(),  # Handles the lifecycle internally
             )
         except asyncio.CancelledError:
-            print("Task cancelled, ensuring on_stop is called.")
+            print("INFO: Task cancelled, ensuring on_stop is called.")
             await self.on_stop()  # Force on_stop to run if tasks are cancelled
 
     def _convert_to_address(self, address: str) -> Address:
@@ -138,17 +145,17 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
             return property_value
 
         except ErrorRejectAbortNack as e:
-            print(f"Error reading property: {e}")
+            print(f"ERROR: reading property: {e}")
             return None
         except TypeError as e:
             print(
-                f"Type error while reading property: {e} - Address: {address}, "
+                f"ERROR: Type error while reading property: {e} - Address: {address}, "
                 f"Object ID: {object_identifier}, Property Identifier: {property_identifier}"
             )
             return None
         except Exception as e:
             print(
-                f"Unexpected error while reading property: {e} - Address: {address}, "
+                f"ERROR: Unexpected error while reading property: {e} - Address: {address}, "
                 f"Object ID: {object_identifier}, Property Identifier: {property_identifier}"
             )
             return None
@@ -193,16 +200,23 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
                 priority,
             )
             print(
-                f"Write successful. Value: {value}, Priority: {priority}, Response: {response}"
+                f"INFO: {address} Write successful, ",
+                f"Value: {value}, ",
+                f"Priority: {priority}, ",
+                f"Response: {response}",
             )
 
         except ErrorRejectAbortNack as e:
-            print(f"Error writing property: {e}")
+            print(f"ERROR: writing property: {e}")
         except TypeError as e:
-            print(f"Type error while writing property: {e} - Value attempted: {value}")
+            print(
+                f"ERROR: Type error while writing property: {e} ",
+                f"Value attempted: {value}",
+            )
         except Exception as e:
             print(
-                f"Unexpected error while writing property: {e} - Value attempted: {value}"
+                f"ERROR: Unexpected error while writing property: {e} ",
+                f"Value attempted: {value}",
             )
 
     async def bacnet_rpm(
@@ -211,23 +225,24 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
         *args: str,
     ):
         """
-        Read Property Multiple (RPM) method to read multiple BACnet properties using vendor info.
-        Returns a list of dictionaries with object identifiers, property identifiers,
-        and either the value or a string describing an error.
+        Read Property Multiple (RPM) method to read multiple BACnet properties.
+
+        This method uses vendor information to retrieve a list of dictionaries with
+        object identifiers, property identifiers, and either the value or an error message.
+
+        Note:
+        - Simple read requests and responses typically don't require segmentation.
+        - These services are required if the server supports segmentation or not.
+        - The device information cache contains:
+        - Vendor identifier (to resolve custom type names),
+        - Protocol services supported (to check if RPM and other services are available),
+        - Maximum APDU size (to determine if the device can handle the request).
         """
         print(f"Received arguments for RPM: {args}")
         args_list: List[str] = list(args)
 
         # Convert address string to BACnet Address object
         address_obj = self._convert_to_address(address)
-
-        """ Note from Joel Bender on vendor and device caches
-        Simple read requests and responses are typically small enough that they don't require segmentation, 
-        and they are required services if the server supports segmentation or not.  
-        The device information cache contains the vendor identifier to help resolve names of custom types, 
-        the protocol services supported to know if RPM and other services are available, 
-        the maximum APDU size to see if a device can handle it at all.
-        """
 
         # Get device info from cache
         device_info = await self.app.device_info_cache.get_device_info(address_obj)
@@ -245,7 +260,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
             object_class = vendor_info.get_object_class(object_identifier[0])
 
             if not object_class:
-                print(f"Unrecognized object type: {object_identifier}")
+                print(f"ERROR: Unrecognized object type: {object_identifier}")
                 return [{"error": f"Unrecognized object type: {object_identifier}"}]
 
             # Save this object identifier as a parameter
@@ -258,7 +273,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
                     propertyIdentifier=args_list.pop(0),
                     vendor_info=vendor_info,
                 )
-                print(f"Property reference: {property_reference}")
+                print(f"INFO: Property reference: {property_reference}")
 
                 # Check if the property is known
                 if property_reference.propertyIdentifier not in (
@@ -269,11 +284,11 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
                     property_type = object_class.get_property_type(
                         property_reference.propertyIdentifier
                     )
-                    print(f"Property type: {property_type}")
+                    print(f"INFO: Property type: {property_type}")
 
                     if not property_type:
                         print(
-                            f"Unrecognized property: {property_reference.propertyIdentifier}"
+                            f"ERROR: Unrecognized property: {property_reference.propertyIdentifier}"
                         )
                         return [
                             {
@@ -292,7 +307,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
             parameter_list.append(property_reference_list)
 
         if not parameter_list:
-            print("Object identifier expected.")
+            print("ERROR: Object identifier expected.")
             return [{"error": "Object identifier expected."}]
 
         try:
@@ -301,7 +316,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
                 address_obj, parameter_list
             )
         except ErrorRejectAbortNack as err:
-            print(f"Error during RPM: {err}")
+            print(f"ERROR: during RPM: {err}")
             return [{"error": f"Error during RPM: {err}"}]
 
         # Prepare the response with either property values or error messages
@@ -326,6 +341,6 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
 
             result_list.append(result)
 
-        print("result_list ", result_list)
+        print("INFO: result_list ", result_list)
 
         return result_list
