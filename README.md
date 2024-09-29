@@ -4,7 +4,7 @@ Much like commanding units in a strategy game, Easy ASO puts you at the helm of 
 
 With intuitive controls and streamlined BACnet property reads and writes, Easy ASO is your base of operations. 
 By automating complex routines, you can deploy your control strategies with precision and efficiency, much like bot scripting in gaming industry. 
-The best part? The battle for energy efficiency doesn't require long scripts—examples are always under 100 lines of code!
+The best part? The battle for energy efficiency doesn't require long scripts—basic sexamples are always under 100 lines of code!
 
 ## The Skeleton of Every Great Bot
 Every bot you create to control BACnet systems follows this simple `on_start` and `on_step` structure, ready to deploy your strategy in real-time very inspired by the [StarCraft II API Client for Python 3](https://github.com/BurnySc2/python-sc2):
@@ -86,6 +86,7 @@ Why cant a BAS be free?
   - Overnight BACnet override realease bot
   - Heat pump system cold weather staggered start for electrical power management
   - Electrical load shift
+  - How to run Python scripts long-term as a Linux service using systemd
 
 ## Future
 - [ ] Make tutorials for practicing bot script with a fake BACnet app allowing for safe, non-production testing of `easy-aso`.
@@ -100,7 +101,8 @@ Easy-aso can also operate just fine without an IoT integration to the building s
 ![Schematic of Python script deployment traditional](https://raw.githubusercontent.com/bbartling/easy-aso/develop/traditional_building.png)
 
 ## Getting Started with easy-aso
-Follow the directions below to get the `easy-aso` project on your local linux machine. Until the project is available on PyPI, you can install it locally by following the steps below.
+Follow the instructions below to set up the `easy-aso` project on your local Linux machine. Until the project is available on PyPI, you can install it locally by following these steps. 
+After the scripts are thoroughly tested and commissioned, they can be run long-term as a Linux service using systemd.
 
 ### Step 1: Clone the Repository
 First, clone the `easy-aso` repository to your local machine:
