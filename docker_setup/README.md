@@ -5,63 +5,14 @@ This project is designed for running BACnet optimization and control strategies 
 
 ## Installation
 
-### 1. Local Installation
+**Setup Docker per Ubuntu documentation**:
+* https://docs.docker.com/engine/install/ubuntu/
 
-To install the package locally, you can run:
+**Check Docker service**:
 
 ```bash
-pip install easy-aso
+sudo systemctl status docker
 ```
-
-### 2. Running in Docker
-
-If you'd like to run the project in a Docker container, follow the steps below.
-
-## Docker Setup
-
-### Step 1: Install Docker on Ubuntu
-
-1. **Update the package list**:
-
-   ```bash
-   sudo apt update
-   ```
-
-2. **Install prerequisite packages**:
-
-   ```bash
-   sudo apt install apt-transport-https ca-certificates curl software-properties-common
-   ```
-
-3. **Add Docker’s official GPG key**:
-
-   ```bash
-   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-   ```
-
-4. **Set up the stable Docker repository**:
-
-   ```bash
-   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-   ```
-
-5. **Update the package list again to recognize Docker’s repository**:
-
-   ```bash
-   sudo apt update
-   ```
-
-6. **Install Docker**:
-
-   ```bash
-   sudo apt install docker-ce
-   ```
-
-7. **Check Docker service**:
-
-   ```bash
-   sudo systemctl status docker
-   ```
 
 ### Step 2: Build the Docker Image
 
@@ -72,9 +23,10 @@ If you'd like to run the project in a Docker container, follow the steps below.
    ```
 
 2. **Build the Docker image**:
+   From inside the project root directory run:
 
    ```bash
-   sudo docker build -t easy-aso .
+   sudo docker build -t easy-aso -f docker_setup/Dockerfile .
    ```
 
 ### Step 3: Run the Docker Container
@@ -117,7 +69,13 @@ If you'd like to run the project in a Docker container, follow the steps below.
    sudo docker start easy-aso-container
    ```
 
-3. **Remove the container**:
+2. **Restart the container**:
+
+   ```bash
+   sudo docker restart easy-aso-container
+   ```
+
+3. **Remove the container**: 
 
    ```bash
    sudo docker rm easy-aso-container
@@ -129,6 +87,33 @@ If you'd like to run the project in a Docker container, follow the steps below.
    sudo docker rmi easy-aso
    ```
 
-## License
+### TODO 
+* Test a docker app on a UDP port other than 47808
 
-This project is licensed under the MIT License.
+```bash
+# Use a Python base image
+FROM python:3.12-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Install necessary packages and dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential && rm -rf /var/lib/apt/lists/*
+
+# Install BACpypes and other dependencies
+RUN pip install bacpypes3 ifaddr
+
+# Copy your Python package into the container
+COPY easy_aso/ /app/easy_aso/
+
+# Copy the make_write_request.py example script into the container
+COPY examples/make_write_request.py /app/make_write_request.py
+
+# Expose the default UDP port 47808 (you can expose other ports as needed)
+EXPOSE 47808/udp
+EXPOSE 47820/udp  # Expose additional port
+
+# Set the default command to run the script, allowing arguments to be passed dynamically
+CMD ["python3", "-u", "/app/make_write_request.py"]
+```

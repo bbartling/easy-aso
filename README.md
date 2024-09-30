@@ -86,7 +86,7 @@ Why cant a BAS be free?
   - Overnight BACnet override realease bot
   - Heat pump system cold weather staggered start for electrical power management
   - Electrical load shift
-  - How to run Python scripts long-term as a Linux service using systemd
+  - How to run Python scripts long-term in a Docker container
 
 ## Future
 - [ ] Make tutorials for practicing bot script with a fake BACnet app allowing for safe, non-production testing of `easy-aso`.
@@ -102,7 +102,8 @@ Easy-aso can also operate just fine without an IoT integration to the building s
 
 ## Getting Started with easy-aso
 Follow the instructions below to set up the `easy-aso` project on your local Linux machine. Until the project is available on PyPI, you can install it locally by following these steps. 
-After the scripts are thoroughly tested and commissioned, they can be run long-term as a Linux service using systemd.
+After the scripts are thoroughly tested and commissioned, they can be run long-term in a Docker container. 
+See the sub directory `docker_setup` for more information.
 
 ### Step 1: Clone the Repository
 First, clone the `easy-aso` repository to your local machine:
