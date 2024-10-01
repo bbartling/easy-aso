@@ -20,7 +20,7 @@ class CustomBot(EasyASO):
 
     async def on_start(self):
         print("CustomBot started!")
-        await asyncio.sleep(5)
+        await asyncio.sleep(0.1)
 
     async def on_step(self):
         print("Starting on_step")

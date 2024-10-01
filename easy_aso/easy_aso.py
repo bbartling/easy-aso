@@ -1,7 +1,7 @@
 import asyncio
-from abc import ABC, abstractmethod  # Import ABC for abstract methods
+import signal
+from abc import ABC, abstractmethod
 from typing import List
-
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import ObjectIdentifier, Null
 from bacpypes3.apdu import (
@@ -28,6 +28,8 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
     def __init__(self, args=None):
         # Parse arguments
         self.args = args or SimpleArgumentParser().parse_args()
+        self.stop_event = asyncio.Event()  # Used to handle stop signal
+        self._stop_handler_called = False  # Flag to prevent multiple calls
 
         print(f"INFO: Arguments: {self.args}")
 
@@ -66,8 +68,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
         return bool(self.optimization_enabled_bv.presentValue)
 
     async def create_application(self):
-        # Create an application instance
-        # and add the commandable binary value object
+        # Create an application instance and add the commandable binary value object
         self.app = Application.from_args(self.args)
         self.app.add_object(self.optimization_enabled_bv)
         print("INFO: Application and objects created and added.")
@@ -83,27 +84,56 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
         """Runs the on_start, on_step, on_stop lifecycle."""
         try:
             await self.on_start()
-            while True:
+            while not self.stop_event.is_set():
                 await self.on_step()
-        except KeyboardInterrupt:
-            print("INFO: KeyboardInterrupt detected. Stopping...")
+        except asyncio.CancelledError:
+            print("INFO: run_lifecycle task cancelled.")
         finally:
             await self.on_stop()
 
+    async def stop_handler(self):
+        """Stop handler triggered by signals."""
+        if self._stop_handler_called:
+            return  # Prevent multiple calls
+        self._stop_handler_called = True
+        print("Stop handler triggered.")
+        self.stop_event.set()
+        await self.on_stop()
+
+        # Cancel all tasks except the current one
+        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        for task in tasks:
+            task.cancel()
+
     async def run(self):
         """
-        Starts the EasyASO application
-        runs the lifecycle (on_start, on_step, on_stop).
+        Starts the EasyASO application, runs the lifecycle (on_start, on_step, on_stop), and handles signals.
         """
-        await self.create_application()  # Ensure application is created
-        try:
-            await asyncio.gather(
-                self.update_server(),  # Runs BACnet server
-                self.run_lifecycle(),  # Handles the lifecycle internally
+        # Set up signal handlers
+        loop = asyncio.get_event_loop()
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(
+                sig, lambda sig=sig: asyncio.create_task(self.stop_handler())
             )
+
+        # Create the application and start the lifecycle
+        await self.create_application()
+        main_task = asyncio.gather(
+            self.update_server(),  # Simulates BACnet server or regular updates
+            self.run_lifecycle(),  # Handles the lifecycle internally
+        )
+
+        try:
+            await main_task
         except asyncio.CancelledError:
-            print("INFO: Task cancelled, ensuring on_stop is called.")
-            await self.on_stop()  # Force on_stop to run if tasks are cancelled
+            print("INFO: Main tasks cancelled.")
+        finally:
+            # Clean up: Remove signal handlers
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                loop.remove_signal_handler(sig)
+            # Ensure on_stop is called
+            if not self._stop_handler_called:
+                await self.on_stop()
 
     def _convert_to_address(self, address: str) -> Address:
         """
