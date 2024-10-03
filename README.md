@@ -151,16 +151,16 @@ Currently, the project includes two unit tests:
 
 To get started with development, you'll need to:
 
-1. **Local Py package**:
+1. **Local pip install**: Develop in a local Python package environment.
    ```bash
    pip uninstall easy-aso
    pip install .
    ```
 
-2. **Setup Docker**
+2. **Setup Docker**: 
     Since the project relies on Docker and Docker Compose to simulate BACnet environments for testing, it's important to ensure these tools are properly installed. Simply follow the instructions in the `easy-aso/docker_setup` directory. These will guide you through setting up Docker and Docker Compose so you can run the necessary tests seamlessly.
 
-3. **Run tests**
+3. **Run tests**: 
     With everything in place, you can verify your setup by running the test suite. Use the following command to run unit tests, including those that interact with the BACnet simulation:
     ```bash
     pytest
