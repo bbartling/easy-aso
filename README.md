@@ -129,6 +129,43 @@ Easy ASO is designed as an operations technology (OT) application with no built-
 - Act in the capacity of an ICS security specialist on behalf of your client, and promptly report any vulnerabilities or issues you discover.
 - Develop an incident response plan to ensure the project is prepared for any potential security breaches, enabling swift and effective action from the incident response team should an issue arise during the implementation of easy-aso.
 
+## Contributing:
+
+PR, git issues, or discussions encouraged! Requirements are the app must be easy, configurable, and not complex.
+
+By incorporating these changes, your README will provide a more comprehensive overview of the easy-aso project and help users understand its purpose and how they can contribute or use it.
+
+## Contributing:
+
+PRs, git issues, and discussions are highly encouraged! The requirements for contributions are that the app remains easy to use, configurable, and avoids unnecessary complexity.
+
+Currently, the project includes two unit tests:
+
+1. **Abstract Base Class (ABC) Validation:**: This test ensures that the EasyASO abstract base class is functioning as intended. Specifically, it verifies that any EasyASO application implements the required methods: on_start, on_stop, and on_step.
+
+2. **BACnet Integration Test:** This test sets up a sample EasyASO client application and a simulated BACnet server device, both running in Docker containers. The test verifies that these applications can successfully communicate over the BACnet protocol. If the client and server can exchange data as expected, the test passes.
+
+### Development Setup:
+
+To get started with development, you'll need to:
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/yourusername/easy-aso.git
+   cd easy-aso
+   pip install .
+   ```
+
+2. **Setup Docker**
+    Since the project relies on Docker and Docker Compose to simulate BACnet environments for testing, it's important to ensure these tools are properly installed. Simply follow the instructions in the `easy-aso/docker_setup` directory. These will guide you through setting up Docker and Docker Compose so you can run the necessary tests seamlessly.
+
+3. **Run tests**
+    With everything in place, you can verify your setup by running the test suite. Use the following command to run unit tests, including those that interact with the BACnet simulation:
+    ```bash
+    pytest
+    ```
+    The tests will check that everything works as expected and that your development environment is configured correctly.
+
 ## License:
 【MIT License】
 
@@ -140,10 +177,5 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-## Contributing:
-
-PR, git issues, or discussions encouraged! Requirements are the app must be easy, configurable, and not complex.
-
-By incorporating these changes, your README will provide a more comprehensive overview of the FreeBAS project and help users understand its purpose and how they can contribute or use it.
 
       
