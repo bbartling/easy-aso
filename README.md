@@ -151,10 +151,9 @@ Currently, the project includes two unit tests:
 
 To get started with development, you'll need to:
 
-1. **Clone the Repository**:
+1. **Local Py package**:
    ```bash
-   git clone https://github.com/yourusername/easy-aso.git
-   cd easy-aso
+   pip uninstall easy-aso
    pip install .
    ```
 

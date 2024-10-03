@@ -1,186 +1,141 @@
 import asyncio
-from easy_aso import EasyASO
-from collections import deque
+import random
 import time
-import random  # Assuming we use random for simulating temp and kW readings
+from easy_aso import EasyASO
 
-# BACnet addresses for building
-OAT_BACNET_ADDR = "10.200.200.233"
-OAT_BACNET_OBJ_ID = "analog-input,7"  # Outside Air Temp sensor ID
+# BACnet constants
+OUTSIDE_AIR_SENSOR_ADDR = "10.200.200.1"
+OUTSIDE_AIR_TEMP_OBJ_ID = "analog-input,1"
 
-BUILDING_KW_THRESHOLD = 200.0  # Building kW limit for load-shifting
-HEAT_PUMPS = [
-    {
-        "name": "HP1",
-        "addr": "10.200.200.231",
-        "kw_rate": 5.0,
-        "zone_temp": 18.0,
-        "enabled": False,
-    },
-    {
-        "name": "HP2",
-        "addr": "10.200.200.232",
-        "kw_rate": 4.5,
-        "zone_temp": 17.5,
-        "enabled": False,
-    },
-    # Add more heat pumps as needed...
+BUILDING_POWER_SENSOR_ADDR = "10.200.200.233"
+BUILDING_POWER_OBJ_ID = "analog-input,7"
+POWER_THRESHOLD = 500  # kW demand threshold to manage
+
+HEAT_PUMP_ADDRESSES = [
+    {"id": 1, "address": "10.200.200.50", "obj_id": "analog-output,1", "kW": 5},
+    {"id": 2, "address": "10.200.200.51", "obj_id": "analog-output,1", "kW": 8},
 ]
 
-STEP_INTERVAL_SECONDS = 300  # 5-minute step intervals
+STEP_INTERVAL_SECONDS = 60
+STAGE_UP_TIMER_SECONDS = 300
+STAGE_DOWN_TIMER_SECONDS = 300
 
 
-class CustomHvacBot(EasyASO):
+class HeatPumpManager(EasyASO):
     def __init__(self):
         super().__init__()
-        self.current_state = "INIT"  # Initial FSM state
-        self.startup_kw = 0.0  # Estimated kW load for building startup
-        self.active_heat_pumps = deque()  # Queue for active heat pumps
-        self.next_check_time = None  # Timestamp for next check
-        self.selected_heat_pumps = []  # List of heat pumps selected for load-shifting
+        self.heat_pumps = HEAT_PUMP_ADDRESSES
+        self.current_load = 0
+        self.load_threshold = POWER_THRESHOLD
+        self.outside_air_temp = 0
+
+        self.last_stage_up_time = time.time()
+        self.last_stage_down_time = time.time()
 
     async def on_start(self):
-        # Custom start logic
-        self.next_check_time = (
-            self.get_3am_check_time()
-        )  # Calculate when 3AM check occurs
-        print("CustomHvacBot is starting. Waiting for 3AM check...")
+        """Initialize the bot and prepare for operations."""
+        print("HeatPumpManager started. Monitoring building load and managing heat pumps.")
+        await asyncio.sleep(0.1)
 
     async def on_step(self):
+        """Runs in each iteration to monitor and manage the load."""
         current_time = time.time()
 
-        if self.current_state == "INIT":
-            await self.init_state()
+        # 3 AM check for load shifting
+        if time.localtime().tm_hour == 3:
+            print("3 AM check triggered!")
+            await self.prepare_load_shift()
 
-        elif self.current_state == "PREPARE_LOAD_SHIFT":
-            if current_time >= self.next_check_time:
-                await self.prepare_load_shift()
+        # Monitor the building's power load
+        await self.monitor_kW_load(current_time)
 
-        elif self.current_state == "LOAD_SHIFT":
-            await self.load_shift_state()
-
-        elif self.current_state == "WAIT":
-            await self.wait_state()
-
-        elif self.current_state == "DONE":
-            print("Load shift completed successfully. All heat pumps are now enabled.")
-            self.current_state = "DONE"
-
-        # Always sleep for the defined step interval
         await asyncio.sleep(STEP_INTERVAL_SECONDS)
 
-    async def on_stop(self):
-        print("Stopping HVAC bot. Releasing all heat pumps.")
-        await self.release_all_heat_pumps()
-
-    def get_3am_check_time(self):
-        """
-        Returns the next 3AM time in seconds since epoch.
-        """
-        now = time.localtime()
-        return time.mktime(
-            (
-                now.tm_year,
-                now.tm_mon,
-                now.tm_mday,
-                3,
-                0,
-                0,
-                now.tm_wday,
-                now.tm_yday,
-                now.tm_isdst,
-            )
-        )
-
-    async def init_state(self):
-        # Read the current outside air temperature
-        oat_temp = await self.bacnet_read(OAT_BACNET_ADDR, OAT_BACNET_OBJ_ID)
-        print(f"Current Outside Air Temp: {oat_temp}°C")
-
-        # Prepare for 3AM check, move to next state
-        self.current_state = "PREPARE_LOAD_SHIFT"
-
     async def prepare_load_shift(self):
-        # At 3AM, check outside air temp and calculate building startup kW using linear regression
-        oat_temp = await self.bacnet_read(OAT_BACNET_ADDR, OAT_BACNET_OBJ_ID)
-        self.startup_kw = self.calculate_startup_kw(oat_temp)  # Linear regression model
-        print(
-            f"Startup kW estimation based on outside air temp ({oat_temp}°C): {self.startup_kw} kW"
-        )
+        """Handles the logic at 3 AM to determine if load shifting is necessary."""
+        print("Reading outside air temperature...")
+        self.outside_air_temp = await self.bacnet_read(OUTSIDE_AIR_SENSOR_ADDR, OUTSIDE_AIR_TEMP_OBJ_ID)
+        print(f"Outside air temperature: {self.outside_air_temp}C")
 
-        if self.startup_kw > BUILDING_KW_THRESHOLD:
-            print(
-                f"Estimated startup kW ({self.startup_kw}) exceeds threshold ({BUILDING_KW_THRESHOLD}). Initiating load shift."
-            )
-            self.select_heat_pumps_for_shift()  # Select heat pumps for load-shifting
-            self.current_state = "LOAD_SHIFT"
-        else:
-            print(f"Startup kW is below threshold. No load-shifting required.")
-            self.current_state = "DONE"
+        # Predict kW based on outside temperature
+        predicted_kw = self.predict_kW_from_temp(self.outside_air_temp)
+        print(f"Predicted kW at startup: {predicted_kw} kW")
 
-    async def load_shift_state(self):
-        # Enable the selected heat pumps one by one based on the coldest zones first
-        for hp in self.selected_heat_pumps:
-            print(
-                f"Enabling {hp['name']} (kW: {hp['kw_rate']}, Temp: {hp['zone_temp']}°C)"
-            )
-            await self.bacnet_write(hp["addr"], "binary-output,1", "active", 10)
-            self.active_heat_pumps.append(hp)  # Add to active list
-            await asyncio.sleep(1)  # Small delay for safety
+        if predicted_kw > self.load_threshold:
+            await self.start_load_shift(predicted_kw)
 
-        # Move to WAIT state after enabling selected pumps
-        self.current_state = "WAIT"
+    async def start_load_shift(self, predicted_kw):
+        """Shifts heat pumps to prevent peak demand based on the predicted kW."""
+        print("Load shifting required. Managing heat pumps...")
 
-    async def wait_state(self):
-        # Monitor kW and ensure it stays under threshold
-        current_building_kw = random.uniform(100, 300)  # Simulate building kW reading
-        print(f"Current building kW: {current_building_kw} kW")
+        current_load = 0
+        pumps_to_activate = []
 
-        if current_building_kw > BUILDING_KW_THRESHOLD:
-            print("Building kW exceeded. Disabling one heat pump to reduce load.")
-            if self.active_heat_pumps:
-                hp = self.active_heat_pumps.pop()
-                await self.bacnet_write(hp["addr"], "binary-output,1", "inactive", 10)
-                print(f"Disabled {hp['name']} (kW: {hp['kw_rate']}).")
-            else:
-                print("No more heat pumps to disable.")
-        else:
-            print("Building kW is within limits. Holding current load.")
+        # Sort heat pumps by their zone temperature (simulate lower temperature first)
+        sorted_heat_pumps = sorted(self.heat_pumps, key=lambda hp: random.uniform(18, 25))
 
-        # Continue monitoring for a set period (e.g., 15 minutes)
-        await asyncio.sleep(900)  # 15-minute WAIT period before resuming
+        # Activate the coldest heat pumps first, until reaching the threshold
+        for heat_pump in sorted_heat_pumps:
+            if current_load + heat_pump["kW"] < self.load_threshold:
+                pumps_to_activate.append(heat_pump)
+                current_load += heat_pump["kW"]
 
-        # Move back to LOAD_SHIFT to continue bringing pumps online
-        if self.active_heat_pumps:
-            self.current_state = "LOAD_SHIFT"
-        else:
-            self.current_state = "DONE"
+        # Activate the selected pumps
+        await self.activate_heat_pumps(pumps_to_activate)
 
-    def calculate_startup_kw(self, oat_temp):
-        """
-        Placeholder for linear regression model.
-        Adjust based on actual regression logic.
-        """
-        return oat_temp * 1.5  # Simplified linear regression
+    async def monitor_kW_load(self, current_time):
+        """Monitors the building kW and adjusts heat pump activity."""
+        building_load = await self.bacnet_read(BUILDING_POWER_SENSOR_ADDR, BUILDING_POWER_OBJ_ID)
+        print(f"Current building load: {building_load} kW")
 
-    def select_heat_pumps_for_shift(self):
-        # Sort heat pumps by zone temperature (coldest first)
-        self.selected_heat_pumps = sorted(HEAT_PUMPS, key=lambda x: x["zone_temp"])
-        print(f"Selected {len(self.selected_heat_pumps)} heat pumps for load-shifting.")
+        if building_load > self.load_threshold:
+            print("Load exceeded threshold. Disabling heat pumps...")
+            await self.disable_one_heat_pump()
 
-    async def release_all_heat_pumps(self):
-        # Release all active heat pumps
-        for hp in self.active_heat_pumps:
-            await self.bacnet_write(hp["addr"], "binary-output,1", "inactive", 10)
-            print(f"Released {hp['name']} from control.")
-        self.active_heat_pumps.clear()
+        elif building_load < self.load_threshold - 50:
+            print("Load below threshold. Enabling more heat pumps...")
+            await self.enable_one_heat_pump()
+
+    async def activate_heat_pumps(self, pumps_to_activate):
+        """Activate selected heat pumps."""
+        for pump in pumps_to_activate:
+            print(f"Activating Heat Pump {pump['id']} at address {pump['address']}")
+            await self.bacnet_write(pump["address"], pump["obj_id"], 1)  # Enable the pump
+
+    async def disable_one_heat_pump(self):
+        """Disables one heat pump to reduce load."""
+        for pump in self.heat_pumps:
+            if pump.get("enabled", False):
+                print(f"Disabling Heat Pump {pump['id']}")
+                await self.bacnet_write(pump["address"], pump["obj_id"], "null")  # Disable the pump
+                pump["enabled"] = False
+                break
+
+    async def enable_one_heat_pump(self):
+        """Enables one heat pump to increase heating."""
+        for pump in self.heat_pumps:
+            if not pump.get("enabled", False):
+                print(f"Enabling Heat Pump {pump['id']}")
+                await self.bacnet_write(pump["address"], pump["obj_id"], 1)  # Enable the pump
+                pump["enabled"] = True
+                break
+
+    def predict_kW_from_temp(self, outside_temp):
+        """Predicts kW based on a simple linear regression of outside temperature."""
+        slope = -3  # Example slope
+        intercept = 500  # Example intercept
+        return slope * outside_temp + intercept
+
+    async def on_stop(self):
+        """Handles stopping of the bot and releasing all overrides."""
+        print("Releasing all heat pump overrides...")
+        for pump in self.heat_pumps:
+            await self.bacnet_write(pump["address"], pump["obj_id"], "null")  # Release the pump
 
 
-# main.py
 async def main():
-    bot = CustomHvacBot()
-    await bot.run()
-
+    manager = HeatPumpManager()
+    await manager.run()
 
 if __name__ == "__main__":
     asyncio.run(main())
