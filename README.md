@@ -69,6 +69,8 @@ Why cant a BAS be free?
 
 * https://www.linkedin.com/pulse/can-building-automation-free-ben-bartling-mtvwc/
 
+Can ASO be easy?
+* https://www.linkedin.com/pulse/can-aso-easy-ben-bartling-eftlc/?trackingId=deyXF1fr00wbx2sLt0mSDQ%3D%3D
 
 ## In Progress
 - [x] Overhaul app code with bacpypes3
