@@ -1,0 +1,29 @@
+version: '3'
+services:
+  bacnet-server:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.server  # Path to the server Dockerfile
+    networks:
+      - bacnet_net
+    cap_add:
+      - NET_ADMIN
+    stdin_open: true
+    tty: true
+
+  bacnet-client:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.client  # Path to the client Dockerfile
+    networks:
+      - bacnet_net
+    cap_add:
+      - NET_ADMIN
+    stdin_open: true
+    tty: true
+    depends_on:
+      - bacnet-server
+
+networks:
+  bacnet_net:
+    driver: bridge

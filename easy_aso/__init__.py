@@ -20,4 +20,7 @@ easy-aso/
 ├── tests/
 │   ├── __init__.py
     ├── test_abc.py
+    ├── docker-compose.yml
+    ├── Dockerfile.client
+    ├── Dockerfile.server
 """
