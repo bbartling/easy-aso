@@ -118,6 +118,10 @@ Navigate into the project directory and install it using `pip`. This will make t
 cd easy-aso
 pip install .
 ```
+### Step 3: Next Steps
+* Check out the examples directory for [sample applications](https://github.com/bbartling/easy-aso/tree/develop/examples).
+* Review the API documentation for [BACnet method calls](https://github.com/bbartling/easy-aso/blob/develop/easy_aso/README.md).
+* Run a [fake BACnet app](https://github.com/bbartling/easy-aso/tree/develop/setup_scripts) and try out code such as `tester.py` in a sandbox environment. Note that both require two Linux devices — I use an Ubuntu VM and a Raspberry Pi for the fake BACnet device, which acts as another BACnet device on the LAN.
 
 ## Cybersecurity Disclaimer
 

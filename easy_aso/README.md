@@ -3,7 +3,56 @@
 
 This backend utilizes the `bacpypes3` library for BACnet communication, providing methods for reading, writing, and retrieving multiple properties from BACnet devices.
 
-## API Methods
+## ABC Requirements for `EasyASO`
+
+The `EasyASO` class is an abstract base class (ABC) that requires subclasses to implement the following methods to handle the lifecycle of an application.
+
+### `on_start()`
+```python
+@abstractmethod
+async def on_start(self):
+    """Abstract method that must be implemented by subclasses for start logic."""
+    pass
+```
+This method is called when the application starts. Subclasses must implement this to define the initialization or startup logic required when running the app.
+
+### `on_step()`
+```python
+@abstractmethod
+async def on_step(self):
+    """Abstract method that must be implemented by subclasses for step logic."""
+    pass
+```
+This method is intended to handle repetitive operations or tasks within the application. Implement this to define what happens during each "step" or cycle of your application.
+
+### `on_stop()`
+```python
+@abstractmethod
+async def on_stop(self):
+    """Abstract method that must be implemented by subclasses for stop logic."""
+    pass
+```
+This method is called when the application is shutting down. Implement this to handle any cleanup or graceful stopping procedures required before termination.
+
+---
+
+### Example Usage:
+
+Subclasses should implement these methods to fulfill the requirements of the abstract `EasyASO` class. Here’s a quick example:
+
+```python
+class MyCustomApp(EasyASO):
+    async def on_start(self):
+        print("App is starting...")
+
+    async def on_step(self):
+        print("App is running...")
+
+    async def on_stop(self):
+        print("App is stopping...")
+```
+
+## BACnet API Methods
 
 ---
 
