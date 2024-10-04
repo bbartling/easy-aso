@@ -133,12 +133,6 @@ Easy ASO is designed as an operations technology (OT) application with no built-
 
 ## Contributing:
 
-PR, git issues, or discussions encouraged! Requirements are the app must be easy, configurable, and not complex.
-
-By incorporating these changes, your README will provide a more comprehensive overview of the easy-aso project and help users understand its purpose and how they can contribute or use it.
-
-## Contributing:
-
 PRs, git issues, and discussions are highly encouraged! The requirements for contributions are that the app remains easy to use, configurable, and avoids unnecessary complexity.
 
 Currently, the project includes two unit tests:
