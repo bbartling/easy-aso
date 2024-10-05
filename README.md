@@ -165,7 +165,7 @@ To get started with development, you'll need to:
     pytest
 
     # or individual test
-    pytest tests test_bacnet.py
+    pytest tests/test_bacnet.py
     ```
     The tests will check that everything works as expected and that your development environment is configured correctly.
 
