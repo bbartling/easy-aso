@@ -143,7 +143,7 @@ Currently, the project includes two unit tests:
 
 1. **Abstract Base Class (ABC) Validation:**: This test ensures that the EasyASO abstract base class is functioning as intended. Specifically, it verifies that any EasyASO application implements the required methods: on_start, on_stop, and on_step.
 
-2. **BACnet Integration Test:** This test sets up a sample EasyASO client application and a simulated BACnet server device, both running in Docker containers. The test verifies that these applications can successfully communicate over the BACnet protocol. If the client and server can exchange data as expected, the test passes.
+2. **BACnet Integration Test:** This test sets up a sample EasyASO client application and a simulated BACnet server device, both running in Docker containers. The test verifies that these applications can successfully communicate over the BACnet protocol for **60 seconds**. If the client and server can exchange data as expected, the test passes.
 
 ### Development Setup:
 
@@ -161,7 +161,11 @@ To get started with development, you'll need to:
 3. **Run tests**: 
     With everything in place, you can verify your setup by running the test suite. Use the following command to run unit tests, including those that interact with the BACnet simulation:
     ```bash
+    # run both tests
     pytest
+
+    # or individual test
+    pytest tests test_bacnet.py
     ```
     The tests will check that everything works as expected and that your development environment is configured correctly.
 

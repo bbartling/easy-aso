@@ -2,6 +2,52 @@ import subprocess
 import time
 import pytest
 
+"""
+Developer Note:
+
+To run the BACnet client and server Docker containers individually NOT in a pytest environment and view their logs:
+
+1. Build the Docker containers:
+
+    Run the following command to build the Docker images for the client and server:
+    
+    $ docker-compose build
+
+2. Run both containers together:
+
+    To run both the BACnet client and server containers together and view their logs in real-time:
+    
+    $ docker-compose up
+
+    * Press **Ctrl + C** to stop the containers when done. This will gracefully stop both containers.
+
+3. View logs for individual containers:
+
+    To view logs for the individual containers after running them, use the following commands:
+
+    - Client logs:
+      $ docker-compose logs bacnet-client
+    
+    - Server logs:
+      $ docker-compose logs bacnet-server
+
+4. Run the containers individually:
+
+    If you want to run the server or client containers individually:
+
+    - To run only the server container:
+      $ docker-compose run bacnet-server
+
+    - To run only the client container:
+      $ docker-compose run bacnet-client
+
+5. Stop the containers:
+
+    To stop and remove the containers that are running in detached mode, use:
+    
+    $ docker-compose down
+"""
+
 
 # Run docker-compose, reduce the step interval for faster cycles
 @pytest.fixture(scope="module")

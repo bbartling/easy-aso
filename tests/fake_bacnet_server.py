@@ -17,7 +17,7 @@ from bacpypes3.primitivedata import Enumerated  # For multi-state-like behavior
 $ python fake_ahu_sys.py --name BensFakeAhu --instance 3456789
 """
 
-UPDATE_INTERVAL_SECONDS = 20
+UPDATE_INTERVAL_SECONDS = 2
 
 
 class CommandableAnalogValueObject(Commandable, AnalogValueObject):

@@ -80,11 +80,13 @@ Handles reading from a BACnet object. Defaults to reading the `present-value` pr
 Handles writing a value to a BACnet object. If the value is `"null"`, it releases the override using `Null()`.
 
 **Parameters:**
-- **address** (`str`): The network address of the BACnet device.
-- **object_identifier** (`str`): Identifier for the BACnet object (e.g., `"analogInput 1"`).
+- **address** (`str`): The network address of the BACnet device. (e.g., `"analog-input,1"`)
+- **object_identifier** (`str`): Identifier for the BACnet object (e.g., `"analog-input,1"`).
 - **value** (`Any`): The value to write to the object. If `"null"`, triggers an override release.
 - **priority** (`int`, optional): The priority of the write operation. Defaults to `-1` (no priority).
-- **property_identifier** (`str`, optional): The specific property of the object to write to. Defaults to `"present-value"`.
+- **property_identifier** (`str`, optional): The specific property of the object to write to. Defaults to `"present-value"`. 
+You can pass in other property indentifiers like `description` or `priority-array` or anything supported by bacpypes3. 
+Reference `bacpypes3/object.py` on the GitHub repo for bacpypes3 [here](https://github.com/JoelBender/BACpypes3/blob/main/bacpypes3/object.py). 
 
 **Returns:**
 - None. Logs the outcome of the operation.
