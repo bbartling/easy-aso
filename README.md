@@ -75,12 +75,13 @@ Can ASO be easy?
 ## In Progress
 - [x] Overhaul app code with bacpypes3
 - [X] Test basic functionality with a fake BACnet app
-- [ ] Create units for algorithms
+- [X] Create unit tests for BACnet server and client with docker containers
 - [ ] Publish the project as a Python library on PyPI
-- [ ] Add support for BACnet Read Multiple
-- [ ] Make tutorials for:
+
+## Future
+- Make tutorials for ASO based on an [LBNL reference](https://transformingbuildingcontrols.lbl.gov/) for:
   - Electrical load shed example
-  - BAS global variable sharing
+  - Classic BAS Supervisory control to share data globally via BACnet priority
   - AHU duct static pressure and temperature setpoint trim and respond (T&R)
   - AHU demand control ventilation based on G36 and ventilation calcs
   - VAV box system occupied-standy with occupancy integration to HVAC
@@ -88,10 +89,9 @@ Can ASO be easy?
   - Overnight BACnet override realease bot
   - Heat pump system cold weather staggered start for electrical power management
   - Electrical load shift
+  - Identify rogue zones in an HVAC system
+  - Self commissioning AHU system bots
   - How to run Python scripts long-term in a Docker container
-
-## Future
-- [ ] Make tutorials for practicing bot script with a fake BACnet app allowing for safe, non-production testing of `easy-aso`.
 
 
 ## Schematics: 
