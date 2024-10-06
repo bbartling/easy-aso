@@ -24,3 +24,16 @@ easy-aso/
     ├── Dockerfile.client
     ├── Dockerfile.server
 """
+
+"""
+class MyCustomApp(EasyASO):
+    async def on_start(self):
+        print("App is starting...")
+
+    async def on_step(self):
+        print("App is running...")
+
+    async def on_stop(self):
+        print("App is stopping...")
+
+"""
