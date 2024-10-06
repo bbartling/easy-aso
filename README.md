@@ -1,14 +1,14 @@
 
-# Easy ASO 🤖
+# Easy ASO 🤖🕹️⚡
 
-Welcome to Easy ASO, the ultimate command tool for Automated Supervisory Optimization (ASO) of BACnet systems. 🎮🏢  
+Welcome to Easy ASO, the ultimate command tool for Automated Supervisory Optimization (ASO) of BACnet systems.  
 Much like commanding units in a strategy game, Easy ASO puts you at the helm of your building systems, empowering you to optimize performance, reduce energy consumption, and maintain comfort with ease.
 
 With intuitive controls and streamlined BACnet property reads and writes, Easy ASO is your base of operations.  
-By automating complex routines, you can deploy your control strategies with precision and efficiency, much like bot scripting in the gaming industry. 🕹️  
-The best part? The battle for energy efficiency doesn't require long scripts—basic examples are always under 100 lines of code! ⚡
+By automating complex routines, you can deploy your control strategies with precision and efficiency, much like bot scripting in the gaming industry.   
+The best part? The battle for energy efficiency doesn't require long scripts—basic examples are always under 100 lines of code! 
 
-## The Skeleton of Every Great Bot 🦾
+## The Skeleton of Every Great Bot 🦾🎮🏢
 Every bot you create to control BACnet systems follows this simple `on_start` and `on_step` structure, ready to deploy your strategy in real-time, very inspired by the [StarCraft II API Client for Python 3](https://github.com/BurnySc2/python-sc2):
 
 ```python
@@ -35,12 +35,12 @@ class CustomHvacBot(EasyASO):
 
 ## BACnet Services Supported 💼
 
-- [x] Read 📖
-- [x] Write 🖊️
-- [ ] Read Multiple 🤔
-- [ ] Write Multiple 🤔
-- [ ] Whois 🔍
-- [ ] Read Priority Array 📋
+- [x] Read
+- [x] Write
+- [ ] Read Multiple
+- [ ] Write Multiple
+- [ ] Whois
+- [ ] Read Priority Array
 - [ ] Anything else? 🤔
 
 ## Exploring Remote BACnet Sites with `tester.py` 🔍
@@ -50,14 +50,14 @@ This tool is designed to assist in the setup and configuration of the `easy-aso`
 
 For detailed information and instructions on using the `Tester.py` script, please refer to the `setup_scripts` directory [README](https://github.com/bbartling/easy-aso/tree/develop/setup_scripts) for more information.
 
-- [x] Read Property (`read_property`) 📖
-- [x] Write Property (`write_property`) 🖊️
-- [x] Read Property Multiple (`read_property_multiple`) 📚
-- [x] Read Priority Array (`read_property` with `priority-array`) 📋
-- [x] Device Discovery (`who-is`) 🔍
-- [x] Object Discovery (`who-has`) 🔎
-- [x] Read All Points (`do_point_discovery`) 📍
-- [x] Router Discovery (`who_is_router_to_network`) 🔗
+- [x] Read Property (`read_property`)
+- [x] Write Property (`write_property`)
+- [x] Read Property Multiple (`read_property_multiple`)
+- [x] Read Priority Array (`read_property` with `priority-array`)
+- [x] Device Discovery (`who-is`)
+- [x] Object Discovery (`who-has`)
+- [x] Read All Points (`do_point_discovery`)
+- [x] Router Discovery (`who_is_router_to_network`)
 
 ## Writeups 💡
 
@@ -75,18 +75,18 @@ Can ASO be easy?
 
 ## Future 🚀
 - Make tutorials for ASO based on an [LBNL reference](https://transformingbuildingcontrols.lbl.gov/) for:
-  - Electrical load shed example ⚡
-  - Classic BAS Supervisory control to share data globally via BACnet priority 🌍
-  - AHU duct static pressure and temperature setpoint trim and respond (T&R) 🔄
-  - AHU demand control ventilation based on G36 and ventilation calcs 🌬️
-  - VAV box system occupied-standby with occupancy integration to HVAC 🏢
-  - Overnight building flush 💤
-  - Overnight BACnet override release bot 🤖
-  - Heat pump system cold weather staggered start for electrical power management ❄️
-  - Electrical load shift ⚡
-  - Identify rogue zones in an HVAC system 🏴‍☠️
-  - Self-commissioning AHU system bots 🤖
-  - How to run Python scripts long-term in a Docker container 🐳
+  - Electrical load shed example
+  - Classic BAS Supervisory control to share data globally via BACnet priority
+  - AHU duct static pressure and temperature setpoint trim and respond (T&R)
+  - AHU demand control ventilation based on G36 and ventilation calcs
+  - VAV box system occupied-standby with occupancy integration to HVAC
+  - Overnight building flush
+  - Overnight BACnet override release bot
+  - Heat pump system cold weather staggered start for electrical power management
+  - Electrical load shift
+  - Identify rogue zones in an HVAC system
+  - Self-commissioning AHU system bots
+  - How to run Python scripts long-term in a Docker container
 
 ## Schematics 🔧:
 
