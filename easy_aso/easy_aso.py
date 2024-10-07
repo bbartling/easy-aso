@@ -30,6 +30,7 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
         self.args = args or SimpleArgumentParser().parse_args()
         self.stop_event = asyncio.Event()  # Used to handle stop signal
         self._stop_handler_called = False  # Flag to prevent multiple calls
+        self.no_bacnet_server = self.args.no_bacnet_server  # Handle --no-bacnet-server flag
 
         print(f"INFO: Arguments: {self.args}")
 
@@ -70,8 +71,12 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
     async def create_application(self):
         # Create an application instance and add the commandable binary value object
         self.app = Application.from_args(self.args)
-        self.app.add_object(self.optimization_enabled_bv)
-        print("INFO: Application and objects created and added.")
+        if not self.args.no_bacnet_server:
+            self.app.add_object(self.optimization_enabled_bv)
+            print("INFO: Application and BACnet server objects created and added.")
+        else:
+            print("INFO: Application is created without BACnet server objects.")
+        
 
     async def update_server(self):
         """
@@ -79,6 +84,10 @@ class EasyASO(ABC):  # Make EasyASO an abstract class
         """
         while True:
             await asyncio.sleep(1)
+            if self.no_bacnet_server:
+                print("INFO: Running in no BACnet server mode.")
+            else:
+                print("INFO: Running with BACnet server.")
 
     async def run_lifecycle(self):
         """Runs the on_start, on_step, on_stop lifecycle."""
