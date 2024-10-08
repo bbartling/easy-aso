@@ -18,8 +18,8 @@ STAGE_DOWN_TIMER_SECONDS = 300
 
 
 class CustomBot(EasyASO):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, args=None):
+        super().__init__(args)
         self.last_stage_up_time = time.time()
         self.last_stage_down_time = time.time()
 

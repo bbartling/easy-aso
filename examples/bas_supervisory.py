@@ -39,8 +39,8 @@ OCCUPANCY_SCHEDULE = {
 
 
 class BuildingBot(EasyASO):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, args=None):
+        super().__init__(args)
         self.heat_setpoint = UNOCCUPIED_HEAT_SETPOINT
         self.last_outside_air_update = datetime.now()
         self.last_vav_temp_update = datetime.now()

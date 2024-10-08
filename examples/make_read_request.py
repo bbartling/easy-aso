@@ -15,6 +15,9 @@ STEP_INTERVAL_SECONDS = 60
 
 
 class CustomBot(EasyASO):
+    def __init__(self, args=None):
+        super().__init__(args)
+
     async def on_start(self):
         print("ReadRequest on_start!")
 

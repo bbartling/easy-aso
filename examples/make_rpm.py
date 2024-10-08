@@ -18,6 +18,9 @@ STEP_INTERVAL_SECONDS = 60
 
 
 class RPMBot(EasyASO):
+    def __init__(self, args=None):
+        super().__init__(args)
+
     async def on_start(self):
         print("RPMBot started! Reading properties periodically.")
 
