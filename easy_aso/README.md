@@ -33,19 +33,33 @@ async def on_stop(self):
 ```
 Invoked when the application is about to terminate. Implement this to handle any necessary cleanup, such as closing connections, saving application state, or releasing resources.
 
-## Example Subclass Implementation
-Below is an example of how to extend `EasyASO` to implement the lifecycle methods:
+## Example Subclass Implementation with Exception Handling
+Below is an example of how to extend EasyASO to implement lifecycle methods with proper exception handling, ensuring that any errors are caught and logged, preventing the application from crashing unexpectedly:
 
 ```python
 class MyCustomApp(EasyASO):
     async def on_start(self):
-        print("App is starting...")
+        try:
+            print("App is starting...")
+            # Add any initialization logic here
+        except Exception as e:
+            print(f"ERROR in on_start: {e}")
 
     async def on_step(self):
-        print("App is running...")
+        try:
+            print("App is running...")
+            # Add core processing logic here
+        except Exception as e:
+            print(f"ERROR in on_step: {e}")
+            # Handle specific errors or reattempt logic if necessary
 
     async def on_stop(self):
-        print("App is stopping...")
+        try:
+            print("App is stopping...")
+            # Add any cleanup logic here
+        except Exception as e:
+            print(f"ERROR in on_stop: {e}")
+
 ```
 
 ## BACnet API Methods

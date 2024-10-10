@@ -131,6 +131,15 @@ class FakeAHUApplication:
                 covIncrement=1.0,
                 description="Cooling Valve Command",
             ),
+            # Additional Point for Mixing Dampers Command
+            "DPR-O": CommandableAnalogValueObject(
+                objectIdentifier=("analogOutput", 4),
+                objectName="DPR-O",
+                presentValue=0.0,
+                units="percent",
+                covIncrement=1.0,
+                description="Mixing Dampers Command",
+            ),
             # Analog Values
             "DAP-SP": CommandableAnalogValueObject(
                 objectIdentifier=("analogValue", 1),
@@ -213,8 +222,6 @@ class FakeAHUApplication:
                         new_value = random.uniform(100.0, 300.0)
                     elif "ZN-T" in name:
                         new_value = random.uniform(60.0, 80.0)
-                    elif "DPR-O" in name:
-                        new_value = random.uniform(0.0, 100.0)
                     else:
                         new_value = random.uniform(5.0, 95.0)
 

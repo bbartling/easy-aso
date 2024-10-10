@@ -28,19 +28,32 @@ class CustomBot(EasyASO):
 
     async def on_step(self):
         current_time = time.time()
-        power_reading = await self.bacnet_read(
-            POWER_MTR_BACNET_ADDR, POWER_MTR_BACNET_OBJ_ID
-        )
-        print(f"Current power reading: {power_reading} kW")
+
+        # Read power consumption with error handling
+        try:
+            power_reading = await self.bacnet_read(
+                POWER_MTR_BACNET_ADDR, POWER_MTR_BACNET_OBJ_ID
+            )
+            if power_reading is None or isinstance(power_reading, str):
+                raise ValueError(f"Invalid power reading: {power_reading}")
+            print(f"Current power reading: {power_reading} kW")
+        except Exception as e:
+            print(f"ERROR: Failed to read power consumption: {e}")
+            power_reading = None  # Set to None if there's an error
 
         # Get status of the discoverable BACnet point for optimization enabled
-        optimization_status = self.get_optimization_enabled_status()
-        print(f"Optimization Enabled Status: {optimization_status}")
+        try:
+            optimization_status = self.get_optimization_enabled_status()
+            print(f"Optimization Enabled Status: {optimization_status}")
+        except Exception as e:
+            print(f"ERROR: Failed to get optimization status: {e}")
+            optimization_status = False  # Default to False if there's an error
 
         if not optimization_status:
             print("Optimization disabled, releasing all BACnet overrides.")
             await self.release_all()
-        else:
+        elif power_reading is not None:
+            # Proceed only if power_reading is valid
             if power_reading > POWER_THRESHOLD:
                 await self.handle_stage_up_logic(current_time, power_reading)
             else:
@@ -55,13 +68,16 @@ class CustomBot(EasyASO):
         if stage_up_elapsed >= STAGE_UP_TIMER_SECONDS:
             print(f"Power {power_reading} exceeds threshold.")
             print(f"Lowering AHU cool valve.")
-            await self.bacnet_write(
-                AHU_COOL_VALVE_BACNET_ADDR,
-                AHU_COOL_VALVE_BACNET_OBJ_ID,
-                AHU_COOL_VALVE_WRITE_VALUE,
-                AHU_COOL_VALVE_WRITE_PRIORITY,
-            )
-            self.last_stage_up_time = current_time
+            try:
+                await self.bacnet_write(
+                    AHU_COOL_VALVE_BACNET_ADDR,
+                    AHU_COOL_VALVE_BACNET_OBJ_ID,
+                    AHU_COOL_VALVE_WRITE_VALUE,
+                    AHU_COOL_VALVE_WRITE_PRIORITY,
+                )
+                self.last_stage_up_time = current_time
+            except Exception as e:
+                print(f"ERROR: Failed to write AHU cool valve: {e}")
         else:
             time_remaining = int(STAGE_UP_TIMER_SECONDS - stage_up_elapsed)
             print(f"Waiting for stage up timer.")
@@ -74,8 +90,11 @@ class CustomBot(EasyASO):
         if stage_down_elapsed >= STAGE_DOWN_TIMER_SECONDS:
             print(f"Power {power_reading} is below threshold.")
             print(f"Releasing control of AHU cool valve.")
-            await self.release_all()
-            self.last_stage_down_time = current_time
+            try:
+                await self.release_all()
+                self.last_stage_down_time = current_time
+            except Exception as e:
+                print(f"ERROR: Failed to release control of AHU cool valve: {e}")
         else:
             time_remaining = int(STAGE_DOWN_TIMER_SECONDS - stage_down_elapsed)
             print(f"Waiting for stage down timer.")
@@ -83,17 +102,23 @@ class CustomBot(EasyASO):
 
     async def on_stop(self):
         print("on_stop called... Releasing all BACnet overrides.")
-        await self.release_all()
+        try:
+            await self.release_all()
+        except Exception as e:
+            print(f"ERROR: Failed to release BACnet overrides on stop: {e}")
 
     async def release_all(self):
         print("Releasing control of AHU cool valve.")
-        await self.bacnet_write(
-            AHU_COOL_VALVE_BACNET_ADDR,
-            AHU_COOL_VALVE_BACNET_OBJ_ID,
-            "null",  # pass a "null" for release
-            AHU_COOL_VALVE_WRITE_PRIORITY,
-        )
-        print("All BACnet overrides have been released.")
+        try:
+            await self.bacnet_write(
+                AHU_COOL_VALVE_BACNET_ADDR,
+                AHU_COOL_VALVE_BACNET_OBJ_ID,
+                "null",  # pass a "null" for release
+                AHU_COOL_VALVE_WRITE_PRIORITY,
+            )
+            print("All BACnet overrides have been released.")
+        except Exception as e:
+            print(f"ERROR: Failed to release AHU cool valve: {e}")
 
 
 async def main():
