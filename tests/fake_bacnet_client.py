@@ -1,13 +1,15 @@
 from easy_aso import EasyASO
 import asyncio
 import time
+import ifaddr
+
 
 # BACnet configuration
-POWER_MTR_BACNET_ADDR = "10.200.200.233"
+POWER_MTR_BACNET_ADDR = ""
 POWER_MTR_BACNET_OBJ_ID = "analog-input,7"
-POWER_THRESHOLD = 120.0  # kW Setpoint for building
+POWER_THRESHOLD = 120.0
 
-AHU_COOL_VALVE_BACNET_ADDR = "10.200.200.233"
+AHU_COOL_VALVE_BACNET_ADDR = ""
 AHU_COOL_VALVE_BACNET_OBJ_ID = "analog-output,3"
 AHU_COOL_VALVE_WRITE_VALUE = 0.0
 AHU_COOL_VALVE_WRITE_PRIORITY = 10
@@ -42,9 +44,11 @@ class CustomBot(EasyASO):
             await self.release_all()
         else:
             if power_reading > POWER_THRESHOLD:
-                await self.handle_stage_up_logic(current_time, power_reading)
+                # await self.handle_stage_up_logic(current_time, power_reading)
+                pass
             else:
-                await self.handle_stage_down_logic(current_time, power_reading)
+                # await self.handle_stage_down_logic(current_time, power_reading)
+                pass
 
         await asyncio.sleep(STEP_INTERVAL_SECONDS)
 
