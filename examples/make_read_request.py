@@ -8,10 +8,13 @@ BACnet read request example
 
 # BACnet MSTP device
 # Hardware address 22 MSTP trunk 12
-BACNET_DEVICE_ADDR = "11:21"
-BACNET_OBJ_ID = "analog-input,1019"
+# BACNET_DEVICE_ADDR = "11:21"
+# BACNET_OBJ_ID = "analog-input,1019"
 
-STEP_INTERVAL_SECONDS = 60
+BACNET_DEVICE_ADDR = "10.200.200.233"
+BACNET_OBJ_ID = "analog-value,1"
+
+STEP_INTERVAL_SECONDS = 10
 
 
 class CustomBot(EasyASO):
