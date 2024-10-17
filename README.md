@@ -1,33 +1,33 @@
 
 # Easy ASO 🤖🕹️⚡
 
-Welcome to Easy ASO, the ultimate command tool for Automated Supervisory Optimization (ASO) of BACnet systems.  
-Much like commanding units in a strategy game, Easy ASO puts you at the helm of your building systems, empowering you to optimize performance, reduce energy consumption, and maintain comfort with ease.
+Welcome to Easy ASO, the ultimate command tool for Automated Supervisory Optimization (ASO) of BACnet systems in EMIS applications. 
+Built on a seamless Python asyncio framework, Easy ASO comes with a fully integrated BACnet asyncio stack for convenience, making BACnet—the default protocol in the HVAC industry—effortless to use. 
+Other protocols can also be implemented during the development process, offering flexibility and extensibility.
 
-With intuitive controls and streamlined BACnet property reads and writes, Easy ASO is your base of operations.  
-By automating complex routines, you can deploy your control strategies with precision and efficiency, much like bot scripting in the gaming industry.   
-The best part? The battle for energy efficiency doesn't require long scripts—basic examples are always under 100 lines of code! 
 
-## The Skeleton of Every Great Bot 🦾🎮🏢
-Every bot you create to control BACnet systems follows this simple `on_start` and `on_step` structure, ready to deploy your strategy in real-time, very inspired by the [StarCraft II API Client for Python 3](https://github.com/BurnySc2/python-sc2):
+## The Skeleton of ASO 🦾🎮🏢
+Control BACnet systems on a simple `on_start`, `on_step`, and `on_stop` structure:
 
 ```python
-class CustomHvacBot(EasyASO):
+class CustomHvacAso(EasyASO):
     async def on_start(self):
-        # Custom start logic - BACnet read request
-        sensor = await self.bacnet_read(BACNET_ADDR, BACNET_OBJ_ID)
-        print("CustomBot is deploying! Read in some value")
+        print("Custom ASO is deploying! Lets do something!")
 
     async def on_step(self):
+	# BACnet read request
+        sensor = await self.bacnet_read("192.168.0.122", "analog-input,1")
+
         # Custom step logic - BACnet write request
-        sensor_value_best = sensor + 5.0
-        await self.bacnet_write(BACNET_ADDR, BACNET_OBJ_ID, sensor_value_best)
+        override_valve = sensor + 5.0
+        await self.bacnet_write("192.168.0.122", "analog-output,2", override_valve)
+
         print("Executing step actions... The system is being optimized!")
         await asyncio.sleep(60)
 
     async def on_stop(self):
         # Custom stop logic - BACnet release request
-        await self.bacnet_write(BACNET_ADDR, BACNET_OBJ_ID, 'null')
+        await self.bacnet_write("192.168.0.122", "analog-output,2", 'null')
         print("Executing stop actions... The system is released back to normal!")
 ```
 
