@@ -88,13 +88,21 @@ Can ASO be easy?
   - Self-commissioning AHU system bots
   - How to run Python scripts long-term in a Docker container
 
+
 ## Schematics 🔧:
 
-Easy-aso always operates behind the firewall and can operate with an IoT integration to the building systems.  
+`easy-aso` is designed to be a fully discoverable BACnet server that can seamlessly integrate into any existing building automation system (BAS). The core of this integration relies on a discoverable BACnet `binary-value` point named `optimization-enabled`. This point allows building operators to maintain full control over the Automated Systems Optimization (ASO) processes. If, at any time, an operator needs to disable an ASO instance, the `optimization-enabled` point provides a direct means to turn off the optimization for any part of the HVAC system. This feature is crucial for maintaining operational flexibility and preventing unwanted system behavior. 
+
+In the event of an issue, such as undesired system behavior or an operator decision to revert control, this BACnet point can be incorporated directly into the logic of `easy-aso`. This ensures that any overrides the script may have applied are released safely and promptly. For a clearer understanding of how this callback is integrated into the ASO design of `easy-aso`, refer to the example Python files that demonstrate its practical implementation.
+
+By default, `easy-aso` is deployed within a secure, internal network (behind a firewall), where it can operate efficiently with IoT or traditional building systems.  
 ![Schematic of Python script deployment](https://raw.githubusercontent.com/bbartling/easy-aso/develop/new_building.png)
 
-Easy-aso can also operate just fine without an IoT integration to the building systems which would just be traditional operations (OT) technology systems that do not have access to the internet.  
+However, `easy-aso` is also fully compatible with operational technology (OT) systems that do not have internet access, supporting more traditional building environments that rely solely on local control.  
 ![Schematic of Python script deployment traditional](https://raw.githubusercontent.com/bbartling/easy-aso/develop/traditional_building.png)
+
+Flexibility is at the heart of `easy-aso`. In a Python asyncio environment, it is easy to extend and build around, enabling the potential for cloud-based integrations. This makes it an ideal choice for advanced deployments where cloud connectivity and remote management are essential.  
+![Schematic of Python script deployment as iot](https://raw.githubusercontent.com/bbartling/easy-aso/develop/easy_aso_as_iot.png)
 
 ## Getting Started with easy-aso 🚀
 
