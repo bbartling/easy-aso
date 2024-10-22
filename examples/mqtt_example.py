@@ -3,7 +3,8 @@ import asyncio
 import aiomqtt
 
 """
-BACnet read request example
+BACnet read request example with MQTT
+pip install aiomqtt
 
 run app with custom name and custom BACnet instance ID
 python examples/mqtt_example.py --name EasyAso --instance 99999
