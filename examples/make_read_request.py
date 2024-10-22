@@ -4,15 +4,23 @@ from easy_aso import EasyASO
 
 """
 BACnet read request example
+
+run app with custom name and custom BACnet instance ID
+python examples/make_read_request.py --name EasyAso --instance 99999
+
+run on a custom UDP port with passing in IP address of your device
+python examples/make_read_request.py --name EasyAso --instance 99999 --address 10.200.200.223/24:47820
+
 """
 
 # BACnet MSTP device
 # Hardware address 22 MSTP trunk 12
-# BACNET_DEVICE_ADDR = "11:21"
-# BACNET_OBJ_ID = "analog-input,1019"
+BACNET_DEVICE_ADDR = "11:21"
+BACNET_OBJ_ID = "analog-input,1019"
 
-BACNET_DEVICE_ADDR = "10.200.200.233"
-BACNET_OBJ_ID = "analog-value,1"
+# BACnet IP example
+# BACNET_DEVICE_ADDR = "10.200.200.233"
+# BACNET_OBJ_ID = "analog-value,1"
 
 STEP_INTERVAL_SECONDS = 10
 

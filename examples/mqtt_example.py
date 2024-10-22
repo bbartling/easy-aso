@@ -1,58 +1,66 @@
 from easy_aso import EasyASO
 import asyncio
-from datetime import datetime
-import paho.mqtt.client as mqtt
-import random
+import aiomqtt
 
-'''
+"""
+BACnet read request example
+
 run app with custom name and custom BACnet instance ID
 python examples/mqtt_example.py --name EasyAso --instance 99999
 
-run on a custom UDP port
+run on a custom UDP port with passing in IP address of your device
 python examples/mqtt_example.py --name EasyAso --instance 99999 --address 10.200.200.223/24:47820
-'''
+
+"""
+
+# BACnet MSTP device example
+BACNET_DEVICE_ADDR = "11:21"
+BACNET_OBJ_ID = "analog-input,1019"
+
+# MQTT settings
+BROKER_ADDRESS = "test.mosquitto.org"
+MQTT_TOPIC = "test/sensor/discharge_air_temp"
+STEP_INTERVAL_SECONDS = 30
+
 
 class CustomBot(EasyASO):
     def __init__(self, args=None):
         super().__init__(args)
         self.mqtt_client = None
-        self.broker_address = "test.mosquitto.org"
-        self.port = 1883
-        self.topic = "test/sensor/temperature"
 
     async def on_start(self):
-        print("ASO: started.")
+        print("ReadRequest on_start!")
         # Initialize MQTT client
-        self.mqtt_client = mqtt.Client("FakeSensorPublisher")
-        self.mqtt_client.connect(self.broker_address, port=self.port)
-        print(f"Connected to MQTT broker at {self.broker_address}")
+        self.mqtt_client = aiomqtt.Client(BROKER_ADDRESS)
 
     async def on_step(self):
-        print("ASO: on_step...")
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"Current Date and Time: {current_time}")
+        print("Starting ReadRequest on_step...")
 
-        # BACnet kill switch
+        # Get and print the optimization enabled status
         optimization_status = self.get_optimization_enabled_status()
-        print(f"optimization_status: {optimization_status}")
+        print(f"Optimization Enabled Status: {optimization_status}")
 
-        # Publish a fake sensor reading to MQTT
-        temperature = round(random.uniform(20.0, 25.0), 2)
-        self.mqtt_client.publish(self.topic, f"Temperature: {temperature} °C")
-        print(f"Published: Temperature: {temperature} °C to topic {self.topic}")
+        # Perform BACnet read request (VAV box discharge air temp sensor)
+        sensor_value_pv = await self.bacnet_read(BACNET_DEVICE_ADDR, BACNET_OBJ_ID)
+        print(f"Read BACnet sensor value: {sensor_value_pv}")
 
-        # Sleep for 5 seconds between steps
-        await asyncio.sleep(5)
+        # Publish the sensor value to the MQTT bus
+        async with self.mqtt_client as client:
+            await client.publish(
+                MQTT_TOPIC, payload=f"Discharge Air Temp: {sensor_value_pv}"
+            )
+            print(f"Published to MQTT: Discharge Air Temp: {sensor_value_pv}")
+
+        await asyncio.sleep(STEP_INTERVAL_SECONDS)
 
     async def on_stop(self):
-        print("ASO: stopped.")
-        if self.mqtt_client:
-            self.mqtt_client.disconnect()
-            print("Disconnected from MQTT broker.")
+        print("ReadRequest on_stop!")
+
 
 async def main():
     bot = CustomBot()
     await bot.run()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
