@@ -68,7 +68,7 @@ Can ASO be easy?
 * https://www.linkedin.com/pulse/can-aso-easy-ben-bartling-eftlc/?trackingId=deyXF1fr00wbx2sLt0mSDQ%3D%3D
 
 Can ASO be used to aid Fault Detection and Diagnostics (FDD)?
-* https://www.linkedin.com/posts/ben-bartling-510a0961_smartbuildings-faultdetection-buildingautomation-activity-7251264077828653056-EC9l
+* https://www.linkedin.com/pulse/can-aso-used-aid-fault-detection-diagnostics-fdd-ben-bartling-mb8lc/
 
 ## In Progress 🛠️
 - [x] Overhaul app code with bacpypes3
