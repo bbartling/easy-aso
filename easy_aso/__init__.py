@@ -1,39 +1,53 @@
-from .easy_aso import EasyASO
-
 """
-easy-aso/
-├── easy_aso/
-│   ├── __init__.py
-│   ├── easy_aso.py
-├── examples/
-│   ├── main.py
-│   ├── staged_load_shed.py
-│   ├── ahu_static_reset.py
-│   ├── bas_supervisory.py
-├── docker_setup/
-│   ├── Dockerfile
-│   ├── README.md
-├── README.md
-├── setup.py
-├── setup_scripts/
-├── spec/
-├── tests/
-│   ├── __init__.py
-    ├── test_abc.py
-    ├── docker-compose.yml
-    ├── Dockerfile.client
-    ├── Dockerfile.server
+Public interface for the easy‑aso package.
+
+This module exposes the agent base classes, BACnet client abstractions
+and GL36 algorithms for consumers.  The original ``EasyASO`` class
+has been superseded by the generic :class:`Agent` but remains for
+backwards compatibility; it simply aliases the ``Agent`` class and
+provides ``on_step`` as an alias of ``on_update``.
 """
 
-"""
-class MyCustomApp(EasyASO):
-    async def on_start(self):
-        print("App is starting...")
+from .agent import Agent, AgentManager
+from .bacnet_client import BACnetClient, InMemoryBACnetClient
+from .gl36 import (
+    calculate_zone_requests,
+    calculate_trim_respond,
+    GL36TrimRespondAgent,
+)
 
-    async def on_step(self):
-        print("App is running...")
 
-    async def on_stop(self):
-        print("App is stopping...")
+class EasyASO(Agent):  # type: ignore
+    """Backwards‑compatible alias for the original EasyASO class.
 
-"""
+    This class inherits from :class:`Agent` and defines ``on_step`` as
+    an alias for ``on_update``.  Subclasses should override
+    ``on_start``, ``on_step`` and ``on_stop`` as before.  The
+    constructor accepts an optional ``update_interval`` argument.
+    """
+
+    def __init__(self, update_interval: float = 60.0, *args, **kwargs) -> None:
+        super().__init__(update_interval=update_interval)
+
+    async def on_step(self) -> None:
+        """Alias for :meth:`Agent.on_update`.  Override in subclasses."""
+        raise NotImplementedError
+
+    # Point on_update to on_step for backwards compatibility
+    async def on_update(self) -> None:
+        await self.on_step()
+
+    # Provide a no‑op __init__ signature to satisfy argparse in legacy tests
+    no_bacnet_server: bool = False
+
+
+__all__ = [
+    "Agent",
+    "AgentManager",
+    "BACnetClient",
+    "InMemoryBACnetClient",
+    "calculate_zone_requests",
+    "calculate_trim_respond",
+    "GL36TrimRespondAgent",
+    "EasyASO",
+]
