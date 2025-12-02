@@ -63,6 +63,8 @@ For detailed information and instructions on using the `Tester.py` script, pleas
 
 ## Getting Setup and Running Tests
 
+Make sure you run system updates in Linux and install Docker and Docker Compose before proceeding.
+
 ### Step 1: Clone the Repository 📂
 First, (I'm on Windows) clone the `easy-aso` repository to your local machine:
 ```bash
@@ -70,28 +72,23 @@ git clone https://github.com/bbartling/easy-aso
 ```
 
 ### Step 2: From a fresh WSL session 🐧
-Run these bash commands:
-
+Run these bash commands from project root directory after cloning. Make sure docker-compose alias works:
 ```bash
-# 1. Go to project
-cd ~/easy-aso-develop
-
-# 2. Make sure docker-compose alias works
 echo "alias docker-compose='docker compose'" >> ~/.bashrc
 source ~/.bashrc
 
 docker-compose version
+```
 
-
-# 3. Create venv + install
+Setup Python Environment:
+```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install --upgrade pip
-pip install -e .
-pip install pytest
 
-# 4. Run tests
+pip install --upgrade pip
+pip install -e ".[test]"
 pytest
+
 ```
 
 You should notice in console when tests are completed.
@@ -103,8 +100,6 @@ tests/test_abc.py ....            [ 80%]
 tests/test_bacnet.py .            [100%]
 
 ```
-
----
 
 The test suite verifies two major behaviors in the system. The first set of tests ensures the `EasyASO` abstract base class behaves correctly by enforcing the required method contract for any ASO application. These tests confirm that subclasses must fully implement `on_start`, `on_step`, and `on_stop`, that argument parsing for flags such as `--no-bacnet-server` works correctly, and that improper subclasses raise errors when abstract methods are missing. Together these checks guarantee a stable API boundary before any BACnet communication logic is ever exercised.
 
