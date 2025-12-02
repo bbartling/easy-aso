@@ -35,10 +35,10 @@ class CustomHvacAso(EasyASO):
 
 - [x] Read
 - [x] Write
-- [ ] Read Multiple
+- [x] Read Multiple
 - [ ] Write Multiple
-- [ ] Whois
-- [ ] Read Priority Array
+- [x] Whois
+- [x] Read Priority Array
 - [ ] Anything else? 🤔
 
 ---
@@ -61,18 +61,54 @@ For detailed information and instructions on using the `Tester.py` script, pleas
 
 ---
 
+## Getting Setup and Running Tests
+
 ### Step 1: Clone the Repository 📂
-First, clone the `easy-aso` repository to your local machine:
+First, (I'm on Windows) clone the `easy-aso` repository to your local machine:
 ```bash
 git clone https://github.com/bbartling/easy-aso
 ```
 
-### Step 2: Install the Package Locally 🖥️
-Navigate into the project directory and install it using `pip`. This will make the `easy-aso` package available in your Python environment.
+### Step 2: From a fresh WSL session 🐧
+Run these bash commands:
+
 ```bash
-cd easy-aso
-pip install .
+# 1. Go to project
+cd ~/easy-aso-develop
+
+# 2. Make sure docker-compose alias works
+echo "alias docker-compose='docker compose'" >> ~/.bashrc
+source ~/.bashrc
+
+docker-compose version
+
+
+# 3. Create venv + install
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -e .
+pip install pytest
+
+# 4. Run tests
+pytest
 ```
+
+You should notice in console when tests are completed.
+
+```text
+collected 5 items
+
+tests/test_abc.py ....            [ 80%]
+tests/test_bacnet.py .            [100%]
+
+```
+
+---
+
+The test suite verifies two major behaviors in the system. The first set of tests ensures the `EasyASO` abstract base class behaves correctly by enforcing the required method contract for any ASO application. These tests confirm that subclasses must fully implement `on_start`, `on_step`, and `on_stop`, that argument parsing for flags such as `--no-bacnet-server` works correctly, and that improper subclasses raise errors when abstract methods are missing. Together these checks guarantee a stable API boundary before any BACnet communication logic is ever exercised.
+
+The second test validates full BACnet communication between two simulated devices running inside Docker containers: a fake BACnet device and a fake `easy-aso` instance. Over roughly fifteen seconds of runtime, the test confirms the client can read, write, and release BACnet points across the bridge network defined in the Compose file, including alternating present-value writes, null-priority releases, and the end-to-end kill-switch logic based on optimization status. After execution, container logs are inspected to assert that no Python errors occurred, that optimization toggled True/False as expected, and that all overrides were successfully released during shutdown. This test ensures the complete lifecycle of read, write, override release, and kill-switch behavior works correctly in a realistic BACnet/IP environment.
 
 ---
 
