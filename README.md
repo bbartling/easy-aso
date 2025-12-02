@@ -111,11 +111,8 @@ all of your optimization logic into dedicated `algorithm.py` modules. Each
 example follows the same structure:
 
 ```text
-examples/
-  <example_name>/
-    __init__.py
-    algorithm.py   # ASO logic (reads, writes, decisions)
-    main.py        # orchestration only (wires things together)
+algorithm.py   # ASO logic (reads, writes, decisions)
+main.py        # orchestration only (wires things together)
 ```
 
 ### Building off the BACnet ping-pong example
@@ -131,8 +128,87 @@ strategies:
 * Add simple control logic in `algorithm.py` (e.g., reset curves, demand caps,
   or “if temp > setpoint + deadband, increase command by X%”)
 
-The point is that `algorithm.py` can grow from “print some values” into a real
+The point is that `algorithm.py` as shown below can grow from “print some values” into a real
 HVAC ASO loop without touching the core EasyASO lifecycle or the test harness.
+
+
+```python
+import asyncio
+import random
+
+from easy_aso import EasyASO
+
+BACNET_DEVICE = "bacnet-server"
+AV1 = "analog-value,1"
+AV2 = "analog-value,2"
+BV1 = "binary-value,1"
+
+WRITE_PRIORITY = 10
+INTERVAL = 5.0  # seconds between steps
+
+
+class BacnetPingPongAso(EasyASO):
+    """
+    Demonstrates a basic BACnet-read/write ASO controller using EasyASO.
+
+    Flow:
+      - Read present-value of AV1 and BV1
+      - Write a random number to AV2 at the configured priority
+      - Release overrides safely on stop
+    """
+
+    async def on_start(self):
+        print("[BacnetPingPongAso] on_start: starting BACnet ping-pong controller")
+
+    async def on_step(self):
+        print("[BacnetPingPongAso] on_step: polling BACnet points")
+
+        av1_val = await self.bacnet_read(BACNET_DEVICE, AV1)
+        bv1_val = await self.bacnet_read(BACNET_DEVICE, BV1)
+        av2_prev = await self.bacnet_read(BACNET_DEVICE, AV2)
+
+        print(f"  AV1 pv: {av1_val}")
+        print(f"  BV1 pv: {bv1_val}")
+        print(f"  AV2 pv before write: {av2_prev}")
+
+        new_val = random.uniform(0.0, 100.0)
+        print(f"  Writing {new_val:.2f} → AV2 @ priority {WRITE_PRIORITY}")
+
+        await self.bacnet_write(BACNET_DEVICE, AV2, new_val, WRITE_PRIORITY)
+
+        await asyncio.sleep(INTERVAL)
+
+    async def on_stop(self):
+        print("[BacnetPingPongAso] on_stop: releasing all overrides…")
+        await self.release_all()
+        print("[BacnetPingPongAso] on_stop: shutdown complete")
+```
+
+
+And then a `main.py` acts as the orchestrator to wire everything together.  
+
+```python
+
+import asyncio
+
+from .algorithm import BacnetPingPongAso
+
+
+async def main():
+    bot = BacnetPingPongAso()
+    await bot.run()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+Run command:
+
+```bash
+python main.py
+```
+
 
 ### Multiple algorithms and telemetry from a single main.py
 
@@ -187,12 +263,9 @@ In this pattern:
 * `main.py` reads almost like a wiring diagram: **instantiate bots, start them,
   and let EasyASO handle the lifecycle**.
 
-This makes it easy to add or remove algorithms, split them across multiple
-containers, or move them under different process managers without changing the
-core optimization logic.
+This makes it easy to add or remove algorithms, split them across multiple containers, or place them under different process managers—without changing the core optimization logic. Everything is fully asynchronous end-to-end, using `asyncio` in both Easy ASO and the underlying BACnet stack (bacpypes3). The architecture can also be ported into a web framework such as FastAPI if you want to expose ASO services or telemetry in an edge environment.
 
 </details>
-```
 
 
 ---
