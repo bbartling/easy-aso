@@ -1,4 +1,4 @@
-# easy‑aso – refactored BACnet ASO framework
+# easy‑aso
 
 This project provides a lightweight, asynchronous framework for **Automated
 Supervisory Optimization (ASO)** of BACnet building automation systems.
