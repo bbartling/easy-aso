@@ -5,7 +5,6 @@ Built on top of an asyncio-first architecture, it provides a clean and modern co
 
 Whether used as a standalone service, embedded inside an EMIS pipeline, or integrated into a larger IoT/microservice framework, Easy ASO simplifies the complex task of supervisory control. Its design supports BACnet out of the box and can be extended to additional building automation protocols as your platform evolves.
 
----
 
 ## The Skeleton of ASO
 Control BACnet systems on a simple `on_start`, `on_step`, and `on_stop` structure:
@@ -32,7 +31,6 @@ class CustomHvacAso(EasyASO):
         print("Executing stop actions... The system is released back to normal!")
 ```
 
----
 
 <details>
 <summary>Preproject Exploring Remote BACnet Sites</summary>
@@ -53,7 +51,6 @@ For detailed information and instructions on using the `Tester.py` script, pleas
 
 </details>
 
----
 
 <details>
 <summary>Getting Setup and Running Tests</summary>
@@ -102,6 +99,7 @@ The test suite verifies two major behaviors in the system. The first set of test
 The second test validates full BACnet communication between two simulated devices running inside Docker containers: a fake BACnet device and a fake `easy-aso` instance. Over roughly fifteen seconds of runtime, the test confirms the client can read, write, and release BACnet points across the bridge network defined in the Compose file, including alternating present-value writes, null-priority releases, and the end-to-end kill-switch logic based on optimization status. After execution, container logs are inspected to assert that no Python errors occurred, that optimization toggled True/False as expected, and that all overrides were successfully released during shutdown. This test ensures the complete lifecycle of read, write, override release, and kill-switch behavior works correctly in a realistic BACnet/IP environment.
 
 </details>
+
 
 <details>
 <summary>Examples and Best Practices</summary>
