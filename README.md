@@ -1,131 +1,80 @@
-# easy‑aso
+# Easy ASO 🤖🕹️⚡
 
-This project provides a lightweight, asynchronous framework for **Automated
-Supervisory Optimization (ASO)** of BACnet building automation systems.
-The original monolithic codebase has been refactored into an agent‑based
-architecture inspired by PNNL’s VOLTTRON IoT platform.  Agents
-encapsulate control logic, run concurrently using `asyncio`, and talk
-to BACnet devices through a pluggable client interface.  Guideline 36
-(GL36) “Trim & Respond” logic and other optimization sequences can be
-implemented as reusable functions or packaged into agents.
+Welcome to Easy ASO, the ultimate command tool for Automated Supervisory Optimization (ASO) of BACnet systems in EMIS applications. 
+Built on a seamless Python asyncio framework, Easy ASO comes with a fully integrated BACnet asyncio stack for convenience, making BACnet—the default protocol in the HVAC industry—effortless to use. 
+Other protocols can also be implemented during the development process, offering flexibility and extensibility.
 
-## Project structure
+---
 
-- **`easy_aso/agent.py`** – defines the `Agent` base class and
-  `AgentManager` used to schedule multiple agents concurrently.
-- **`easy_aso/bacnet_client.py`** – contains a minimal `BACnetClient`
-  interface and an `InMemoryBACnetClient` stub for testing without
-  network access.
-- **`easy_aso/gl36/trim_respond.py`** – implements stateless functions
-  for calculating GL36 zone requests and trim/respond setpoint resets
-  along with a `GL36TrimRespondAgent` that ties them together.
-- **`tests/`** – contains unit tests for the agent lifecycle and GL36
-  functions.  Legacy integration tests have been stubbed out and
-  skipped.
-
-The repository intentionally omits the previous example scripts and
-Docker‑based BACnet simulations to focus on the core library.  A
-packaged distribution can be created using the provided `setup.py`.
-
-## Installation
-
-The library requires Python 3.8 or newer.  To install the package
-locally for development, first create and activate a virtual
-environment (optional but recommended):
-
-```sh
-python3 -m venv venv
-source venv/bin/activate
-```
-
-Then install the package and its dependencies.  Because the
-``setup.py`` file lives in the same directory as this README, you
-should run the installation from the project root (the extracted
-folder) rather than referencing a nested path.  Use editable mode
-(``-e .``) so that changes you make to the source files are
-immediately reflected without reinstalling:
-
-```sh
-pip install --upgrade pip
-
-# Install BACnet dependencies (optional)
-pip install bacpypes3 ifaddr
-
-# Install the easy‑aso package in editable (development) mode
-pip install -e .
-```
-
-Installing in editable mode tells pip to create a link to your working
-directory instead of copying files into ``site‑packages``.  When you
-no longer need the local install, run ``pip uninstall easy-aso`` to
-remove it.  Note that the ``bacpypes3`` dependency is only necessary
-if you plan to connect to real BACnet devices; the unit tests and
-example FastAPI app use the in‑memory client and will run without it.
-
-## Running the tests
-
-The test suite uses Python’s built‑in `unittest` module and does not
-depend on any external services.  From the project root (the directory
-containing ``setup.py``), run:
-
-```sh
-python -m unittest discover -v
-```
-
-You should see output indicating that the agent lifecycle and GL36
-functions are tested and that legacy tests are skipped.  There is
-no need to install or run Docker for these tests.
-
-## Developing custom agents
-
-To implement your own control logic, subclass `easy_aso.agent.Agent`
-and override the asynchronous lifecycle hooks:
+## The Skeleton of ASO 🦾🎮🏢
+Control BACnet systems on a simple `on_start`, `on_step`, and `on_stop` structure:
 
 ```python
-from easy_aso.agent import Agent
+class CustomHvacAso(EasyASO):
+    async def on_start(self):
+        print("Custom ASO is deploying! Lets do something!")
 
-class MyController(Agent):
-    async def on_start(self) -> None:
-        # initialization logic
-        pass
+    async def on_step(self):
+	# BACnet read request
+        sensor = await self.bacnet_read("192.168.0.122", "analog-input,1")
 
-    async def on_update(self) -> None:
-        # periodic control logic
-        pass
+        # Custom step logic - BACnet write request
+        override_valve = sensor + 5.0
+        await self.bacnet_write("192.168.0.122", "analog-output,2", override_valve)
 
-    async def on_stop(self) -> None:
-        # cleanup logic
-        pass
+        print("Executing step actions... The system is being optimized!")
+        await asyncio.sleep(60)
 
-# Run the agent
-import asyncio
-from easy_aso.agent import AgentManager
-
-async def main() -> None:
-    agent = MyController(update_interval=60.0)
-    manager = AgentManager([agent])
-    await manager.start_all()
-    try:
-        await asyncio.Event().wait()  # run forever
-    except KeyboardInterrupt:
-        await manager.stop_all()
-
-asyncio.run(main())
+    async def on_stop(self):
+        # Custom stop logic - BACnet release request
+        await self.bacnet_write("192.168.0.122", "analog-output,2", 'null')
+        print("Executing stop actions... The system is released back to normal!")
 ```
 
-For GL36 trim/respond applications, use the helper functions in
-`easy_aso.gl36.trim_respond` or the `GL36TrimRespondAgent` class as
-a starting point.  Because the algorithm functions are stateless,
-they can also be deployed as serverless functions (e.g. AWS Lambda)
-and reused across multiple AHUs or VAV boxes.
+## Current BACnet Services Supported 💼
 
-## Contributing
+- [x] Read
+- [x] Write
+- [ ] Read Multiple
+- [ ] Write Multiple
+- [ ] Whois
+- [ ] Read Priority Array
+- [ ] Anything else? 🤔
 
-Contributions are welcome!  Please open issues or submit pull
-requests to discuss new features, improvements or bug fixes.  When
-adding new functionality, ensure it includes appropriate unit tests
-and documentation.
+---
 
+## Exploring Remote BACnet Sites with `tester.py` 🔍
+
+The `tester.py` script, located in the scripts directory, provides a utility for exploring a remote BACnet site via the bacpypes3 console.  
+This tool is designed to assist in the setup and configuration of the `easy-aso` project, streamlining the integration process.  
+
+For detailed information and instructions on using the `Tester.py` script, please refer to the `setup_scripts` directory [README](https://github.com/bbartling/easy-aso/tree/develop/setup_scripts) for more information.
+
+- [x] Read Property (`read_property`)
+- [x] Write Property (`write_property`)
+- [x] Read Property Multiple (`read_property_multiple`)
+- [x] Read Priority Array (`read_property` with `priority-array`)
+- [x] Device Discovery (`who-is`)
+- [x] Object Discovery (`who-has`)
+- [x] Read All Points (`do_point_discovery`)
+- [x] Router Discovery (`who_is_router_to_network`)
+
+---
+
+### Step 1: Clone the Repository 📂
+First, clone the `easy-aso` repository to your local machine:
+```bash
+git clone https://github.com/bbartling/easy-aso
+```
+
+### Step 2: Install the Package Locally 🖥️
+Navigate into the project directory and install it using `pip`. This will make the `easy-aso` package available in your Python environment.
+```bash
+cd easy-aso
+pip install .
+```
+
+---
 
 ## 📜 License
 
