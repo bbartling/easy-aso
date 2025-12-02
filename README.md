@@ -1,8 +1,9 @@
 # Easy ASO
 
-Welcome to Easy ASO, the ultimate command tool for Automated Supervisory Optimization (ASO) of BACnet systems in EMIS applications. 
-Built on a seamless Python asyncio framework, Easy ASO comes with a fully integrated BACnet asyncio stack for convenience, making BACnet—the default protocol in the HVAC industry—effortless to use. 
-Other protocols can also be implemented during the development process, offering flexibility and extensibility.
+Easy ASO is a lightweight, Python-based orchestration layer that acts as the easy button for Automated Supervisory Optimization (ASO) in BACnet-powered HVAC systems.
+Built on top of an asyncio-first architecture, it provides a clean and modern control loop for energy optimization strategies while handling all BACnet/IP communication in the background.
+
+Whether used as a standalone service, embedded inside an EMIS pipeline, or integrated into a larger IoT/microservice framework, Easy ASO simplifies the complex task of supervisory control. Its design supports BACnet out of the box and can be extended to additional building automation protocols as your platform evolves.
 
 ---
 
@@ -31,6 +32,8 @@ class CustomHvacAso(EasyASO):
         print("Executing stop actions... The system is released back to normal!")
 ```
 
+---
+
 <details>
 <summary>Preproject Exploring Remote BACnet Sites</summary>
 
@@ -54,8 +57,6 @@ For detailed information and instructions on using the `Tester.py` script, pleas
 
 <details>
 <summary>Getting Setup and Running Tests</summary>
-
-</details>
 
 
 Make sure you run system updates in Linux and install Docker and Docker Compose before proceeding.
@@ -99,6 +100,8 @@ tests/test_bacnet.py .            [100%]
 The test suite verifies two major behaviors in the system. The first set of tests ensures the `EasyASO` abstract base class behaves correctly by enforcing the required method contract for any ASO application. These tests confirm that subclasses must fully implement `on_start`, `on_step`, and `on_stop`, that argument parsing for flags such as `--no-bacnet-server` works correctly, and that improper subclasses raise errors when abstract methods are missing. Together these checks guarantee a stable API boundary before any BACnet communication logic is ever exercised.
 
 The second test validates full BACnet communication between two simulated devices running inside Docker containers: a fake BACnet device and a fake `easy-aso` instance. Over roughly fifteen seconds of runtime, the test confirms the client can read, write, and release BACnet points across the bridge network defined in the Compose file, including alternating present-value writes, null-priority releases, and the end-to-end kill-switch logic based on optimization status. After execution, container logs are inspected to assert that no Python errors occurred, that optimization toggled True/False as expected, and that all overrides were successfully released during shutdown. This test ensures the complete lifecycle of read, write, override release, and kill-switch behavior works correctly in a realistic BACnet/IP environment.
+
+</details>
 
 <details>
 <summary>Examples and Best Practices</summary>
