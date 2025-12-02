@@ -104,9 +104,96 @@ The second test validates full BACnet communication between two simulated device
 <details>
 <summary>Examples and Best Practices</summary>
 
-* TODO 
+This project is designed so that you can start with very simple ASO “bots” and
+grow into more complex HVAC optimization services without rewriting the core
+plumbing. The key pattern is: **keep `main.py` clean and declarative**, and put
+all of your optimization logic into dedicated `algorithm.py` modules. Each
+example follows the same structure:
+
+```text
+examples/
+  <example_name>/
+    __init__.py
+    algorithm.py   # ASO logic (reads, writes, decisions)
+    main.py        # orchestration only (wires things together)
+```
+
+### Building off the BACnet ping-pong example
+
+The `bacnet_ping_pong` example shows a single algorithm reading a few BACnet
+points and writing to a command point (e.g., AV2) at a defined priority. In a
+real HVAC context this “ping-pong” pattern can evolve into more realistic
+strategies:
+
+* Treat AV1 as a sensor (e.g., supply air temperature, zone temperature, or kW)
+* Treat AV2 as a command (e.g., fan speed, valve position, discharge temp setpoint)
+* Use BV1 as a mode flag or optimization enable/disable “kill switch”
+* Add simple control logic in `algorithm.py` (e.g., reset curves, demand caps,
+  or “if temp > setpoint + deadband, increase command by X%”)
+
+The point is that `algorithm.py` can grow from “print some values” into a real
+HVAC ASO loop without touching the core EasyASO lifecycle or the test harness.
+
+### Multiple algorithms and telemetry from a single main.py
+
+You are not limited to a single algorithm. A common best practice is to keep
+each control strategy in its own class and module (e.g., `SupplyAirResetAso`,
+`DemandLimitAso`, `PingPongAso`), and then have a single `main.py` that runs
+several of them in parallel along with telemetry publishers (MQTT, HTTP, file
+logger, etc.) using `asyncio.gather`.
+
+Conceptually, a `main.py` might look like this:
+
+```python
+# examples/multi_algo_orchestrator/main.py
+
+import asyncio
+
+from .supply_air_reset.algorithm import SupplyAirResetAso
+from .demand_limit.algorithm import DemandLimitAso
+from .bacnet_ping_pong.algorithm import BacnetPingPongAso
+from .telemetry.mqtt_publisher import MqttTelemetry  # your own helper
+
+async def main():
+    # Instantiate independent ASO “bots”
+    supply_reset_bot = SupplyAirResetAso()
+    demand_limit_bot = DemandLimitAso()
+    ping_pong_bot = BacnetPingPongAso()
+
+    # Separate task for telemetry / MQTT publishing
+    telemetry_task = MqttTelemetry(
+        topic_prefix="building/easy-aso",
+        interval_seconds=10.0,
+    )
+
+    # Run all of them concurrently
+    await asyncio.gather(
+        supply_reset_bot.run(),
+        demand_limit_bot.run(),
+        ping_pong_bot.run(),
+        telemetry_task.run(),
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+In this pattern:
+
+* Each ASO algorithm stays focused on **one job** (e.g., AHU reset, demand
+  limiting, simple ping-pong test).
+* Telemetry (MQTT, Influx, HTTP, file logging) lives in its **own component**
+  that can be reused across bots.
+* `main.py` reads almost like a wiring diagram: **instantiate bots, start them,
+  and let EasyASO handle the lifecycle**.
+
+This makes it easy to add or remove algorithms, split them across multiple
+containers, or move them under different process managers without changing the
+core optimization logic.
 
 </details>
+```
+
 
 ---
 
