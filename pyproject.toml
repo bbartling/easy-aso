@@ -17,15 +17,16 @@ authors = [
 dependencies = [
   "bacpypes3",
   "ifaddr",
-]
-
-classifiers = [
-  "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent",
+  "rdflib>=7.0.0",
 ]
 
 [project.optional-dependencies]
+platform = [
+  "fastapi",
+  "uvicorn[standard]",
+  "httpx",
+  "asyncio-mqtt",
+]
 test = ["pytest"]
 
 [project.urls]

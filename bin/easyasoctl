@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
+
+usage() {
+  cat <<USAGE
+Usage:
+  easyasoctl up                    Start platform (gateway + agents)
+  easyasoctl down                  Stop platform
+  easyasoctl status                Show running services
+  easyasoctl logs <svc> [<svc..>]  Tail logs
+  easyasoctl start <svc>           Start a single service
+  easyasoctl stop <svc>            Stop a single service
+  easyasoctl restart <svc>         Restart a single service
+
+Examples:
+  ./bin/easyasoctl up
+  ./bin/easyasoctl restart dueler_a
+  ./bin/easyasoctl logs bacnet-gateway dueler_a
+USAGE
+}
+
+compose() {
+  # Prefer docker compose (v2) but fall back to docker-compose.
+  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    docker compose -f "$COMPOSE_FILE" "$@"
+  elif command -v docker-compose >/dev/null 2>&1; then
+    docker-compose -f "$COMPOSE_FILE" "$@"
+  else
+    echo "ERROR: docker compose (v2) or docker-compose not found" >&2
+    exit 1
+  fi
+}
+
+cmd=${1:-}
+shift || true
+
+case "$cmd" in
+  up)
+    compose up -d --build
+    ;;
+  down)
+    compose down
+    ;;
+  status)
+    compose ps
+    ;;
+  logs)
+    compose logs -f "$@"
+    ;;
+  start)
+    compose start "$@"
+    ;;
+  stop)
+    compose stop "$@"
+    ;;
+  restart)
+    compose restart "$@"
+    ;;
+  ""|-h|--help|help)
+    usage
+    ;;
+  *)
+    echo "Unknown command: $cmd" >&2
+    usage
+    exit 1
+    ;;
+esac

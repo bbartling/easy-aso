@@ -1,0 +1,89 @@
+services:
+  # Singleton that owns BACnet/IP UDP/47808 on the host.
+  bacnet-gateway:
+    build: .
+    network_mode: host
+    environment:
+      # IMPORTANT: Tune these to your site.
+      # Example (Pi on LAN):
+      #   BACNET_ARGS: "--name Gateway --instance 123 --address 10.200.200.10/24"
+      BACNET_ARGS: ${BACNET_ARGS:-"--name Gateway --instance 123"}
+    command: ["python", "-m", "uvicorn", "easy_aso.gateway.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    restart: unless-stopped
+
+  # Two test-bench duelers that prove RPM + read + write + null-release.
+  dueler_a:
+    build: .
+    network_mode: host
+    depends_on:
+      - bacnet-gateway
+    environment:
+      BACNET_GATEWAY_URL: ${BACNET_GATEWAY_URL:-"http://127.0.0.1:8000"}
+      AGENT_NAME: "dueler_a"
+      DEVICE_ADDRESS: ${DEVICE_ADDRESS:-"10.200.200.233"}
+      BOOL_POINT: ${BOOL_POINT:-"binaryValue,1"}
+      WRITE_PRIORITY: ${WRITE_PRIORITY:-"8"}
+      HOLD_SECONDS: ${HOLD_SECONDS:-"2"}
+      STEP_SECONDS: ${DUELER_STEP_SECONDS:-"5"}
+      JITTER_SECONDS: "0.5"
+      # Example RPM args (space-separated):
+      # RPM_ARGS: "analogValue,1 present-value units binaryValue,1 present-value"
+      RPM_ARGS: ${RPM_ARGS:-""}
+    command: ["python", "-m", "easy_aso.agents.dueler_agent"]
+    restart: unless-stopped
+
+  dueler_b:
+    build: .
+    network_mode: host
+    depends_on:
+      - bacnet-gateway
+    environment:
+      BACNET_GATEWAY_URL: ${BACNET_GATEWAY_URL:-"http://127.0.0.1:8000"}
+      AGENT_NAME: "dueler_b"
+      DEVICE_ADDRESS: ${DEVICE_ADDRESS:-"10.200.200.233"}
+      BOOL_POINT: ${BOOL_POINT:-"binaryValue,1"}
+      WRITE_PRIORITY: ${WRITE_PRIORITY:-"8"}
+      HOLD_SECONDS: ${HOLD_SECONDS:-"2"}
+      STEP_SECONDS: ${DUELER_STEP_SECONDS:-"5"}
+      JITTER_SECONDS: "1.0"
+      RPM_ARGS: ${RPM_ARGS:-""}
+    command: ["python", "-m", "easy_aso.agents.dueler_agent"]
+    restart: unless-stopped
+
+  # MQTT broker (host network so agents can reach it at 127.0.0.1:1883)
+  mqtt:
+    image: eclipse-mosquitto:2
+    network_mode: host
+    restart: unless-stopped
+
+  mqtt_publisher:
+    build: .
+    network_mode: host
+    depends_on:
+      - bacnet-gateway
+      - mqtt
+    environment:
+      BACNET_GATEWAY_URL: ${BACNET_GATEWAY_URL:-"http://127.0.0.1:8000"}
+      AGENT_NAME: "mqtt_publisher"
+      MQTT_HOST: "127.0.0.1"
+      MQTT_PORT: "1883"
+      MQTT_TOPIC: ${MQTT_TOPIC:-"easyaso/telemetry"}
+      DEVICE_ADDRESS: ${DEVICE_ADDRESS:-"10.200.200.233"}
+      RPM_ARGS: ${RPM_ARGS:-""}
+      STEP_SECONDS: ${MQTT_STEP_SECONDS:-"5"}
+    command: ["python", "-m", "easy_aso.agents.mqtt_publisher_agent"]
+    restart: unless-stopped
+
+  hvac_agent:
+    build: .
+    network_mode: host
+    depends_on:
+      - bacnet-gateway
+    environment:
+      BACNET_GATEWAY_URL: ${BACNET_GATEWAY_URL:-"http://127.0.0.1:8000"}
+      AGENT_NAME: "hvac_agent"
+      DEVICE_ADDRESS: ${DEVICE_ADDRESS:-"10.200.200.233"}
+      RPM_ARGS: ${RPM_ARGS:-""}
+      STEP_SECONDS: ${HVAC_STEP_SECONDS:-"10"}
+    command: ["python", "-m", "easy_aso.agents.hvac_agent"]
+    restart: unless-stopped

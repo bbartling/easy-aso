@@ -276,3 +276,49 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Dockerized "VOLTTRON-like" Agent Deployment (Modernized)
+
+This repo now includes a **singleton BACnet gateway** container (owns UDP/47808) plus multiple **algorithm agents** that behave like VOLTTRON agents (start/stop/restart) but run as independent containers.
+
+### Why a Gateway?
+BACnet/IP uses a single well-known UDP port (47808). Instead of letting every agent fight over that socket, we run **one** container that owns the BACnet stack and expose a small async HTTP API for agents.
+
+### Quick Start (Linux/Raspberry Pi)
+1) Set env vars for your host BACnet interface:
+
+```bash
+export BACNET_ARGS="--name Gateway --instance 123 --address 10.200.200.10/24"
+export DEVICE_ADDRESS="10.200.200.233"
+export BOOL_POINT="binaryValue,1"
+# Optional: prove RPM too
+export RPM_ARGS="analogValue,1 present-value units binaryValue,1 present-value"
+```
+
+2) Bring the platform up:
+
+```bash
+./bin/easyasoctl up
+```
+
+3) Start/stop like VOLTTRON:
+
+```bash
+./bin/easyasoctl status
+./bin/easyasoctl restart dueler_a
+./bin/easyasoctl stop hvac_agent
+./bin/easyasoctl logs bacnet-gateway dueler_a
+```
+
+### Services
+- **bacnet-gateway**: FastAPI + bacpypes3. Endpoints: `/health`, `/read`, `/write`, `/rpm`.
+- **dueler_a / dueler_b**: test bench agents that continuously:
+  1) optionally RPM,
+  2) read a boolean point,
+  3) write the opposite,
+  4) release with Null (priority 8 by default).
+- **mqtt**: Eclipse Mosquitto broker.
+- **mqtt_publisher**: publishes gateway RPM results to MQTT.
+- **hvac_agent**: a minimal placeholder showing where your real ASO logic would live.
+
+> Note: The provided `docker-compose.yml` uses `network_mode: host` because it is the most reliable way to talk BACnet/IP on a LAN from containers.
