@@ -259,25 +259,8 @@ a FastAPI service for edge deployments.
 
 </details>
 
----
-
-## 📜 License
-
-Everything here is **MIT Licensed** — free, open source, and made for the BAS community.  
-Use it, remix it, or improve it — just share it forward so others can benefit too. 🥰🌍
-
-
-【MIT License】
-
-Copyright 2025 Ben Bartling
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-## Dockerized "VOLTTRON-like" Agent Deployment (Modernized)
+<details>
+<summary>Dockerized "VOLTTRON-like" Agent Deployment (Modernized)</summary>
 
 This repo now includes a **singleton BACnet gateway** container (owns UDP/47808) plus multiple **algorithm agents** that behave like VOLTTRON agents (start/stop/restart) but run as independent containers.
 
@@ -322,3 +305,23 @@ export RPM_ARGS="analogValue,1 present-value units binaryValue,1 present-value"
 - **hvac_agent**: a minimal placeholder showing where your real ASO logic would live.
 
 > Note: The provided `docker-compose.yml` uses `network_mode: host` because it is the most reliable way to talk BACnet/IP on a LAN from containers.
+
+</details>
+
+---
+
+## 📜 License
+
+Everything here is **MIT Licensed** — free, open source, and made for the BAS community.  
+Use it, remix it, or improve it — just share it forward so others can benefit too. 🥰🌍
+
+
+【MIT License】
+
+Copyright 2026 Ben Bartling
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
