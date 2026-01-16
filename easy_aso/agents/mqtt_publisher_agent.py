@@ -4,11 +4,11 @@ import asyncio
 import json
 import os
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from asyncio_mqtt import Client as MQTTClient
 
-from easy_aso.bacnet_client.remote_client import RemoteBacnetClient
+from easy_aso.bacnet_client.factory import create_bacnet_client_from_env
 
 
 def _env(name: str, default: str) -> str:
@@ -17,19 +17,20 @@ def _env(name: str, default: str) -> str:
 
 
 async def main() -> None:
-    gateway_url = _env("BACNET_GATEWAY_URL", "http://bacnet-gateway:8000")
     mqtt_host = _env("MQTT_HOST", "mqtt")
     mqtt_port = int(_env("MQTT_PORT", "1883"))
     topic = _env("MQTT_TOPIC", "easyaso/telemetry")
 
-    address = _env("DEVICE_ADDRESS", "10.0.0.1")
     rpm_args_raw = os.environ.get("RPM_ARGS", "")
     rpm_args = rpm_args_raw.split() if rpm_args_raw else []
 
     step_s = float(_env("STEP_SECONDS", "5.0"))
     name = _env("AGENT_NAME", "mqtt_publisher")
 
-    bac = RemoteBacnetClient(gateway_url)
+    bac, address = create_bacnet_client_from_env()
+
+    if hasattr(bac, "start"):
+        await getattr(bac, "start")()
 
     async with MQTTClient(mqtt_host, mqtt_port) as mqtt:
         try:
@@ -40,11 +41,7 @@ async def main() -> None:
                     "device": address,
                 }
 
-                if rpm_args:
-                    payload["rpm"] = await bac.rpm(address, *rpm_args)
-                else:
-                    # if no RPM args given, publish a minimal heartbeat
-                    payload["rpm"] = []
+                payload["rpm"] = await bac.rpm(address, *rpm_args) if rpm_args else []
 
                 msg = json.dumps(payload, default=str)
                 await mqtt.publish(topic, msg)
@@ -52,7 +49,10 @@ async def main() -> None:
 
                 await asyncio.sleep(step_s)
         finally:
-            await bac.close()
+            if hasattr(bac, "close"):
+                await getattr(bac, "close")()
+            if hasattr(bac, "stop"):
+                await getattr(bac, "stop")()
 
 
 if __name__ == "__main__":

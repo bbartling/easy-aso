@@ -4,7 +4,7 @@ import asyncio
 import os
 import random
 
-from easy_aso.bacnet_client.remote_client import RemoteBacnetClient
+from easy_aso.bacnet_client.factory import create_bacnet_client_from_env
 
 
 def _env(name: str, default: str) -> str:
@@ -13,8 +13,6 @@ def _env(name: str, default: str) -> str:
 
 
 async def main() -> None:
-    gateway_url = _env("BACNET_GATEWAY_URL", "http://bacnet-gateway:8000")
-    address = _env("DEVICE_ADDRESS", "10.0.0.1")
     bool_point = _env("BOOL_POINT", "binaryValue,1")
 
     # Example RPM args: "analogValue,1 present-value units analogValue,2 present-value"
@@ -28,35 +26,31 @@ async def main() -> None:
 
     name = _env("AGENT_NAME", "dueler")
 
-    client = RemoteBacnetClient(gateway_url)
+    client, address = create_bacnet_client_from_env()
+
+    if hasattr(client, "start"):
+        await getattr(client, "start")()
 
     try:
-        # Slight jitter so duelers don't always collide on the same edge
         await asyncio.sleep(random.random() * max(jitter_s, 0.0))
 
         while True:
-            # 1) Prove RPM works (optional)
             if rpm_args:
                 results = await client.rpm(address, *rpm_args)
                 print(f"[{name}] RPM results (len={len(results)}): {results[:3]}")
 
-            # 2) Read a boolean point
             cur = await client.read(address, bool_point, "present-value")
             print(f"[{name}] Read {address} {bool_point} -> {cur}")
 
-            # bacpypes3 commonly returns strings like 'active'/'inactive' for BV
             if isinstance(cur, str):
                 cur_norm = cur.strip().lower()
                 next_val = "inactive" if cur_norm == "active" else "active"
             else:
-                # fallback: treat truthy as on
                 next_val = 0 if bool(cur) else 1
 
-            # 3) Write opposite at priority (prove write)
             print(f"[{name}] Write {address} {bool_point} = {next_val} @P{priority}")
             await client.write(address, bool_point, next_val, priority=priority)
 
-            # 4) Hold, then release with Null (prove null release)
             await asyncio.sleep(hold_s)
             print(f"[{name}] Release {address} {bool_point} @P{priority}")
             await client.write(address, bool_point, "null", priority=priority)
@@ -64,7 +58,10 @@ async def main() -> None:
             await asyncio.sleep(step_s)
 
     finally:
-        await client.close()
+        if hasattr(client, "close"):
+            await getattr(client, "close")()
+        if hasattr(client, "stop"):
+            await getattr(client, "stop")()
 
 
 if __name__ == "__main__":

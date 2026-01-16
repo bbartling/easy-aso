@@ -1,0 +1,260 @@
+Name,PointType,Units,Commandable
+chillerEnable,BV,Status,Y
+emergencyStop,BV,Status,N
+isSIUnits,BV,Status,N
+systemStartStop,BV,Status,N
+chwp1Enable,BV,Status,N
+chwp2Enable,BV,Status,N
+cwp1Enable,BV,Status,N
+cwp2Enable,BV,Status,N
+chwp1Status,BV,Status,N
+chwp2Status,BV,Status,N
+cwp1Status,BV,Status,N
+cwp2Status,BV,Status,N
+chwp1Fault,BV,Status,N
+chwp2Fault,BV,Status,N
+cwp1Fault,BV,Status,N
+cwp2Fault,BV,Status,N
+coolingTowerEnable,BV,Status,N
+coolingTowerStatus,BV,Status,N
+coolingTowerFault,BV,Status,N
+openIsolationValves,BV,Status,N
+openCondenserWaterIsolationValve,BV,Status,N
+openChilledWaterIsolationValve,BV,Status,N
+chillerStatus,BV,Status,N
+emergencyStopStatus,BV,Status,N
+chillerFaultStatus,BV,Status,N
+anyCompInFault,BV,Status,N
+anyCompInLockout,BV,Status,N
+evapFlowSwitchStatus,BV,Status,N
+condFlowSwitchStatus,BV,Status,N
+hpSwitchStatus,BV,Status,N
+lpSwitchStatus,BV,Status,N
+leakDetectorStatus,BV,Status,N
+freezeStat,BV,Status,N
+comp1Status,BV,Status,N
+comp1EconomizerSolenoid,BV,Status,N
+comp1isVTT,BV,Status,N
+comp2Status,BV,Status,N
+comp2EconomizerSolenoid,BV,Status,N
+comp2isVTT,BV,Status,N
+comp3Status,BV,Status,N
+comp3EconomizerSolenoid,BV,Status,N
+comp3isVTT,BV,Status,N
+comp4Status,BV,Status,N
+comp4EconomizerSolenoid,BV,Status,N
+comp4isVTT,BV,Status,N
+comp5Status,BV,Status,N
+comp5EconomizerSolenoid,BV,Status,N
+comp5isVTT,BV,Status,N
+comp6Status,BV,Status,N
+comp6EconomizerSolenoid,BV,Status,N
+comp6isVTT,BV,Status,N
+systemStartStopRead,BV,Status,N
+chwp1EnableRead,BV,Status,N
+chwp2EnableRead,BV,Status,N
+cwp1EnableRead,BV,Status,N
+cwp2EnableRead,BV,Status,N
+chwp1StatusRead,BV,Status,N
+chwp2StatusRead,BV,Status,N
+cwp1StatusRead,BV,Status,N
+cwp2StatusRead,BV,Status,N
+chwp1FaultRead,BV,Status,N
+chwp2FaultRead,BV,Status,N
+cwp1FaultRead,BV,Status,N
+cwp2FaultRead,BV,Status,N
+coolingTowerEnableRead,BV,Status,N
+coolingTowerStatusRead,BV,Status,N
+coolingTowerFaultRead,BV,Status,N
+openCWIsolationValveRead,BV,Status,N
+openCHWIsolationValveRead,BV,Status,N
+chwSetPoint,AV,degrees celsius,Y
+chillerDemandLimit,AV,,N
+evapDP,AV,kpa pressure units,N
+evapFlow,AV,,N
+condDP,AV,kpa pressure units,N
+condFlow,AV,,N
+sysChwSupplyTemp,AV,degrees celsius,N
+sysChwReturnTemp,AV,degrees celsius,N
+sysCWSupplyTemp,AV,degrees celsius,N
+sysCWReturnTemp,AV,degrees celsius,N
+outsideAirTemp,AV,degrees celsius,N
+outsideAirHumidity,AV,,N
+chwEndofLoopDP,AV,kpa pressure units,N
+chwEndofLoopDPSetpoint,AV,kpa pressure units,N
+systemChwDP,AV,kpa pressure units,N
+systemChwFlow,AV,,N
+systemCWDP,AV,kpa pressure units,N
+systemCWFlow,AV,,N
+chwp1SpeedFeedback,AV,percent,N
+chwp2SpeedFeedback,AV,percent,N
+cwp1SpeedFeedback,AV,percent,N
+cwp2SpeedFeedback,AV,percent,N
+coolingTowerSpeed,AV,percent,N
+chwBypassValveCommand,AV,,N
+cwBypassValveCommand,AV,,N
+chwSetPointRead,AV,,N
+chillerDemandLimitRead,AV,,N
+chwReturnTemp,AV,degrees celsius,N
+chwSupplyTemp,AV,degrees celsius,N
+evapDPRead,AV,kpa pressure units,N
+evapFlowRead,AV,,N
+evapApproach,AV,degrees celsius,N
+averageSuctionPressure,AV,Kilopascal,N
+averageSuctionTemperature,AV,degrees celsius,N
+averageSuctionSuperheat,AV,,N
+cwReturnTemp,AV,degrees celsius,N
+cwSupplyTemp,AV,degrees celsius,N
+cwDP,AV,kpa pressure units,N
+cwFlow,AV,,N
+condApproach,AV,degrees celsius,N
+refrigLevelSensor,AV,,N
+averageDischargePressure,AV,Kilopascal,N
+averageDischargeTemperature,AV,degrees celsius,N
+averageDischargeSuperheat,AV,,N
+currentCoolingLoad,AV,,N
+currentTotalAmps,AV,Amps,N
+currentPower,AV,kilowatt,N
+currentEfficiency,AV,percent,N
+currentAverageDemandPercentage,AV,,N
+systemStatus,AV,,N
+nextCompressorToStart,AV,,N
+nextCompressorToStop,AV,,N
+numberOfCompressorsRunning,AV,,N
+comp1ActualSpeed,AV,percent,N
+comp1ActualPower,AV,kilowatt,N
+comp1SuctionPressure,AV,Kilopascal,N
+comp1DischargePressure,AV,Kilopascal,N
+comp1RunHours,AV,,N
+comp1PressureRatio,AV,,N
+comp1Demand,AV,,N
+comp1AlarmWord1,AV,,N
+comp1AlarmWord2,AV,,N
+comp1Alarm,AV,,N
+comp1FaultWord1,AV,,N
+comp1FaultWord2,AV,,N
+comp1FaultWord3,AV,,N
+comp1Fault,AV,,N
+comp2ActualSpeed,AV,percent,N
+comp2ActualPower,AV,kilowatt,N
+comp2SuctionPressure,AV,Kilopascal,N
+comp2DischargePressure,AV,Kilopascal,N
+comp2RunHours,AV,,N
+comp2PressureRatio,AV,percent,N
+comp2Demand,AV,,N
+comp2AlarmWord1,AV,,N
+comp2AlarmWord2,AV,,N
+comp2Alarm,AV,,N
+comp2FaultWord1,AV,,N
+comp2FaultWord2,AV,,N
+comp2FaultWord3,AV,,N
+comp2Fault,AV,,N
+comp3ActualSpeed,AV,percent,N
+comp3ActualPower,AV,kilowatt,N
+comp3SuctionPressure,AV,Kilopascal,N
+comp3DischargePressure,AV,Kilopascal,N
+comp3RunHours,AV,,N
+comp3PressureRatio,AV,,N
+comp3Demand,AV,,N
+comp3AlarmWord1,AV,,N
+comp3AlarmWord2,AV,,N
+comp3Alarm,AV,,N
+comp3FaultWord1,AV,,N
+comp3FaultWord2,AV,,N
+comp3FaultWord3,AV,,N
+comp3Fault,AV,,N
+comp4ActualSpeed,AV,percent,N
+comp4ActualPower,AV,kilowatt,N
+comp4SuctionPressure,AV,Kilopascal,N
+comp4DischargePressure,AV,Kilopascal,N
+comp4RunHours,AV,,N
+comp4PressureRatio,AV,Kilopascal,N
+comp4Demand,AV,,N
+comp4AlarmWord1,AV,,N
+comp4AlarmWord2,AV,,N
+comp4Alarm,AV,,N
+comp4FaultWord1,AV,,N
+comp4FaultWord2,AV,,N
+comp4FaultWord3,AV,,N
+comp4Fault,AV,,N
+comp5ActualSpeed,AV,percent,N
+comp5ActualPower,AV,kilowatt,N
+comp5SuctionPressure,AV,,N
+comp5DischargePressure,AV,Kilopascal,N
+comp5RunHours,AV,,N
+comp5PressureRatio,AV,Kilopascal,N
+comp5Demand,AV,,N
+comp5AlarmWord1,AV,,N
+comp5AlarmWord2,AV,,N
+comp5Alarm,AV,,N
+comp5FaultWord1,AV,,N
+comp5FaultWord2,AV,,N
+comp5FaultWord3,AV,,N
+comp5Fault,AV,,N
+comp6ActualSpeed,AV,percent,N
+comp6ActualPower,AV,kilowatt,N
+comp6SuctionPressure,AV,Kilopascal,N
+comp6DischargePressure,AV,Kilopascal,N
+comp6RunHours,AV,,N
+comp6PressureRatio,AV,Kilopascal,N
+comp6Demand,AV,,N
+comp6AlarmWord1,AV,,N
+comp6AlarmWord2,AV,,N
+comp6Alarm,AV,,N
+comp6FaultWord1,AV,,N
+comp6FaultWord2,AV,,N
+comp6FaultWord3,AV,,N
+comp6Fault,AV,,N
+subcool1,AV,,N
+subcool2,AV,,N
+subcool3,AV,,N
+subcool4,AV,,N
+subcool5,AV,,N
+liquidLineTemp1,AV,degrees celsius,N
+liquidLineTemp2,AV,degrees celsius,N
+liquidLineTemp3,AV,degrees celsius,N
+liquidLineTemp4,AV,degrees celsius,N
+liquidLineTemp5,AV,degrees celsius,N
+liquidLinePressure1,AV,Kilopascal,N
+liquidLinePressure2,AV,Kilopascal,N
+liquidLinePressure3,AV,Kilopascal,N
+liquidLinePressure4,AV,Kilopascal,N
+liquidLinePressure5,AV,Kilopascal,N
+economizerTemp1,AV,degrees celsius,N
+economizerTemp2,AV,degrees celsius,N
+economizerTemp3,AV,degrees celsius,N
+economizerTemp4,AV,degrees celsius,N
+economizerTemp5,AV,degrees celsius,N
+economizerPressure1,AV,Kilopascal,N
+economizerPressure2,AV,Kilopascal,N
+economizerPressure3,AV,Kilopascal,N
+economizerPressure4,AV,Kilopascal,N
+economizerPressure5,AV,Kilopascal,N
+economizerEXVCommandedPosition1,AV,percent,N
+economizerEXVCommandedPosition2,AV,percent,N
+economizerEXVCommandedPosition3,AV,percent,N
+economizerEXVCommandedPosition4,AV,percent,N
+economizerEXVCommandedPosition5,AV,percent,N
+exvCommandedPosition1,AV,percent,N
+exvCommandedPosition2,AV,percent,N
+exvCommandedPosition3,AV,percent,N
+exvCommandedPosition4,AV,percent,N
+exvCommandedPosition5,AV,percent,N
+exvCommandedPosition6,AV,percent,N
+exvCommandedPosition7,AV,percent,N
+exvCommandedPosition8,AV,percent,N
+exvCommandedPosition9,AV,percent,N
+exvCommandedPosition10,AV,percent,N
+systemChwSupplyTemp,AV,degrees celsius,N
+systemChwReturnTemp,AV,degrees celsius,N
+systemCwSupplyTemp,AV,degrees celsius,N
+systemCwReturnTemp,AV,degrees celsius,N
+outsideAirTemperature,AV,degrees celsius,N
+outsideAirHumidity2,AV,percent,N
+chwP1SpeedCommand,AV,percent,N
+chwP2SpeedCommand,AV,percent,N
+cwP1SpeedCommand,AV,percent,N
+cwP2SpeedCommand,AV,percent,N
+coolingTowerSpeed2,AV,percent,N
+chwBypassValveCommand2,AV,percent,N
+cwBypassValveCommand2,AV,percent,N

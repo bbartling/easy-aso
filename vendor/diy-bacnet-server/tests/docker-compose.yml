@@ -1,0 +1,31 @@
+version: '3'
+services:
+  bacnet-server:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: diy-bacnet-server-test
+    networks:
+      - bacnet-network
+    cap_add:
+      - NET_ADMIN
+    stdin_open: true
+    tty: true
+    environment:
+      # FIX: Add this line so Python can find the 'bacpypes_server' package
+      PYTHONPATH: /app
+      
+      # Optional override for CSV path
+      HVAC_SERVER_POINTS_CSV: /app/hvac_server_points.csv
+    command: >
+      python3 -u bacpypes_server/main.py
+        --name TestServer
+        --instance 987654
+        --public
+    ports:
+      - "8080:8080"
+      - "47808:47808/udp"
+
+networks:
+  bacnet-network:
+    driver: bridge

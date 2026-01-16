@@ -1,5 +1,28 @@
 # Easy ASO
 
+
+## BACnet Core + Agents (DIY BACnet Server Integration)
+
+This repo now vendors **diy-bacnet-server** under `vendor/diy-bacnet-server/` and uses it as the default **BACnet core** container. The core is the *only* service that owns UDP/47808; all agents talk to it over JSON-RPC (TCP).
+
+Quickstart:
+
+```bash
+# build + start BACnet core + example agents
+docker compose up -d --build
+
+# open Swagger for the core
+# http://localhost:8080/docs
+```
+
+Agent configuration (defaults in `docker-compose.yml`):
+
+- `BACNET_BACKEND=diy_jsonrpc`
+- `DIY_BACNET_URL=http://127.0.0.1:8080`
+- `DEVICE_INSTANCE=<your bacnet device instance>`
+
+If you still want the old easy-aso REST gateway, set `BACNET_BACKEND=easy_gateway` and run `easy_aso.gateway.app` as your core instead.
+
 Easy ASO is a lightweight, Python-based orchestration layer that acts as the easy button for Automated Supervisory Optimization (ASO) in BACnet-powered HVAC systems.
 Built on top of an asyncio-first architecture, it provides a clean and modern control loop for energy optimization strategies while handling all BACnet/IP communication in the background.
 
@@ -325,3 +348,7 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## 🏗️ System Architecture
+
+(Updated: easy-aso uses diy-bacnet-server as BACnet Core.)

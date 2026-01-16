@@ -1,0 +1,4 @@
+Name,PointType,Units,Commandable,Default
+optimization-enable,BV,Status,Y,active
+setpoint-temp,AV,degreesFahrenheit,Y,72.5
+outdoor-temp,AV,degreesFahrenheit,N,22.0
