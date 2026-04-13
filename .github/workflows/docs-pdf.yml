@@ -1,12 +1,12 @@
 # Regenerate pdf/easy-aso-docs.pdf (+ .txt) when docs or the builder change.
-# Opens a PR (protected main cannot receive direct pushes from GITHUB_TOKEN).
+# Opens a PR (protected master cannot receive direct pushes from GITHUB_TOKEN).
 # Same pattern as open-fdd: https://github.com/bbartling/open-fdd/blob/master/.github/workflows/docs-pdf.yml
 
 name: Docs PDF
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - "docs/**"
       - "scripts/build_docs_pdf.py"
@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: master
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
@@ -57,7 +57,7 @@ jobs:
           body: |
             Automated refresh from **Docs PDF** workflow ([`.github/workflows/docs-pdf.yml`](.github/workflows/docs-pdf.yml)).
 
-            Merge when ready so `pdf/easy-aso-docs.pdf` and `pdf/easy-aso-docs.txt` stay current on `main`.
+            Merge when ready so `pdf/easy-aso-docs.pdf` and `pdf/easy-aso-docs.txt` stay current on `master`.
           add-paths: |
             pdf/easy-aso-docs.pdf
             pdf/easy-aso-docs.txt

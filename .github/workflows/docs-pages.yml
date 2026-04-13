@@ -1,12 +1,12 @@
 # Build Jekyll site from docs/ and deploy to GitHub Pages (project site: /easy-aso).
 # First-time setup: repo Settings → Pages → Build and deployment → Source: **GitHub Actions**.
-# open-fdd uses branch `master`; easy-aso uses `main` (see on.push).
+# Same branch filter as open-fdd: https://github.com/bbartling/open-fdd/blob/master/.github/workflows/docs-pages.yml
 
 name: Docs (GitHub Pages)
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - "docs/**"
       - ".github/workflows/docs-pages.yml"

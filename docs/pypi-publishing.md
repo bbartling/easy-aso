@@ -22,7 +22,7 @@ Official guide: [Trusted Publishers](https://docs.pypi.org/trusted-publishers/).
 
 ## Cutting a release
 
-1. Bump `version` in `pyproject.toml` on `main` (or your release branch, then merge).
+1. Bump `version` in `pyproject.toml` on **`master`** (open-fdd style) or your release branch, then merge.
 2. Tag a **PEP 440** version with a `v` prefix (matches the workflow filter):
 
    ```bash
