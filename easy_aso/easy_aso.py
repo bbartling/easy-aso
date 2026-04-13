@@ -24,6 +24,19 @@ class CommandableBinaryValueObject(Commandable, BinaryValueObject):
     """
 
 
+class _OptimizationKillSwitchPlaceholder:
+    """In-memory optimization flag before BACnet objects exist.
+
+    bacpypes3 local objects schedule async work from ``__init__``; constructing
+    ``CommandableBinaryValueObject`` in ``EasyASO.__init__`` therefore requires a
+    running event loop on newer stacks. We attach the real BACnet object in
+    ``create_application`` instead.
+    """
+
+    def __init__(self):
+        self.presentValue = "active"
+
+
 class EasyASO(ABC):
     def __init__(self, args=None):
         # Parse arguments
@@ -41,16 +54,10 @@ class EasyASO(ABC):
         self.no_bacnet_server = self.args.no_bacnet_server
         print(f"INFO: Arguments: {self.args}")
 
-        # Create a commandable binary value object
-        self.optimization_enabled_bv = CommandableBinaryValueObject(
-            objectIdentifier=("binaryValue", 1),
-            objectName="optimization-enabled",
-            presentValue="active",
-            statusFlags=[0, 0, 0, 0],
-            description="Commandable binary value object",
-        )
+        # Real BACnet object is created in create_application (needs running loop).
+        self.optimization_enabled_bv = _OptimizationKillSwitchPlaceholder()
         print(
-            "INFO: Commandable Binary Value Object initialized: ",
+            "INFO: Optimization kill-switch holder initialized: ",
             f"{self.optimization_enabled_bv}",
         )
 
@@ -79,6 +86,14 @@ class EasyASO(ABC):
         # Create an application instance and add the commandable binary value object
         self.app = Application.from_args(self.args)
         if not self.args.no_bacnet_server:
+            prev = self.optimization_enabled_bv.presentValue
+            self.optimization_enabled_bv = CommandableBinaryValueObject(
+                objectIdentifier=("binaryValue", 1),
+                objectName="optimization-enabled",
+                presentValue=prev,
+                statusFlags=[0, 0, 0, 0],
+                description="Commandable binary value object",
+            )
             self.app.add_object(self.optimization_enabled_bv)
             print("INFO: Application and BACnet server objects created and added.")
         else:

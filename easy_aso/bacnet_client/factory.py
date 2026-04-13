@@ -53,3 +53,7 @@ def create_bacnet_client_from_env() -> Tuple[BacnetClient, str]:
     client = RemoteBacnetClient(url)
     addr = _env("DEVICE_ADDRESS", "10.200.200.233")
     return client, addr
+
+
+# Backward-compatible name used in examples/docs
+make_bacnet_client_from_env = create_bacnet_client_from_env
