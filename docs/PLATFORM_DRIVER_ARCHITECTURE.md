@@ -85,3 +85,16 @@ Publishers subscribe to an internal **async callback queue** or poll latest valu
 
 - **In-memory SQLite** (`:memory:`) + **mock driver** for lifecycle and CRUD/reload tests (no BACnet network).
 - **Optional integration** later: compose stack + real RPC (out of scope for default CI).
+
+## Implementation status (phases 2–7)
+
+| Phase | Delivered |
+|-------|-----------|
+| 2 | `easy_aso/supervisor/store/` — SQLite schema v1, `SupervisorRepository`, `ensure_seed_data` |
+| 3 | `easy_aso/supervisor/runtime/` — `SupervisorRuntime`, per-device tasks, health, graceful cancel |
+| 4 | `easy_aso/supervisor/drivers/` — `BaseDriver`, `StubDriver`, `BacnetJsonRpcDriver` (JSON-RPC RPM) |
+| 5 | `easy_aso/supervisor/coordinator.py` — CRUD hooks calling `reload_device` with structured logging |
+| 6 | `easy_aso/supervisor/api/` + `app.py` — FastAPI CRUD, latest values, health (`/api/v1/...`) |
+| 7 | `tests/test_supervisor.py`, `docs/SUPERVISOR_WORKFLOWS.md`, pytest-asyncio config |
+
+Entry point: **`uvicorn easy_aso.supervisor.app:app`**

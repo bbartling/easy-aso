@@ -1,0 +1,120 @@
+from __future__ import annotations
+
+import asyncio
+from pathlib import Path
+
+import pytest
+
+from easy_aso.supervisor.runtime.registry import SupervisorRuntime
+from easy_aso.supervisor.store.database import open_supervisor_db
+from easy_aso.supervisor.store.repository import SupervisorRepository
+from easy_aso.supervisor.store.seed import ensure_seed_data
+
+
+@pytest.mark.asyncio
+async def test_store_seed_and_device_roundtrip(tmp_path: Path) -> None:
+    db = tmp_path / "t1.sqlite"
+    conn = await open_supervisor_db(str(db))
+    repo = SupervisorRepository(conn)
+    await ensure_seed_data(repo)
+    assert await repo.device_count() >= 1
+    devs = await repo.list_devices()
+    assert any(d.id == "seed-example-vav" for d in devs)
+    d = await repo.get_device("seed-example-vav")
+    assert d is not None
+    assert d.enabled is False
+    pts = await repo.list_points(d.id)
+    assert len(pts) >= 2
+    await conn.close()
+
+
+@pytest.mark.asyncio
+async def test_runtime_stub_poll_updates_points(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SUPERVISOR_DB_PATH", str(tmp_path / "t2.sqlite"))
+    conn = await open_supervisor_db(str(tmp_path / "t2.sqlite"))
+    repo = SupervisorRepository(conn)
+    await ensure_seed_data(repo)
+    await repo.update_device_fields(
+        "seed-example-vav",
+        {"enabled": True, "scrape_interval_seconds": 0.35},
+    )
+    rt = SupervisorRuntime(repo)
+    await rt.start()
+    try:
+        await asyncio.sleep(0.5)
+        h = rt.device_health("seed-example-vav")
+        assert h is not None
+        assert h.last_poll_at is not None
+        pts = await repo.list_points("seed-example-vav", enabled_only=True)
+        for p in pts:
+            assert p.last_polled_at is not None
+            assert p.last_error is None
+            assert p.last_value_json is not None
+    finally:
+        await rt.stop()
+        await conn.close()
+
+
+@pytest.mark.asyncio
+async def test_hot_reload_on_point_update(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SUPERVISOR_DB_PATH", str(tmp_path / "t3.sqlite"))
+    conn = await open_supervisor_db(str(tmp_path / "t3.sqlite"))
+    repo = SupervisorRepository(conn)
+    await ensure_seed_data(repo)
+    await repo.update_device_fields("seed-example-vav", {"enabled": True, "scrape_interval_seconds": 0.4})
+    rt = SupervisorRuntime(repo)
+    await rt.start()
+    try:
+        await asyncio.sleep(0.35)
+        pts = await repo.list_points("seed-example-vav")
+        pid = pts[0].id
+        await repo.update_point_fields(pid, {"name": "renamed"})
+        await rt.reload_device("seed-example-vav")
+        await asyncio.sleep(0.35)
+        h = rt.device_health("seed-example-vav")
+        assert h is not None
+        assert h.status in ("running", "error")
+    finally:
+        await rt.stop()
+        await conn.close()
+
+
+def test_supervisor_http_crud(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SUPERVISOR_DB_PATH", str(tmp_path / "t4.sqlite"))
+    from starlette.testclient import TestClient
+
+    from easy_aso.supervisor.app import create_supervisor_app
+
+    with TestClient(create_supervisor_app()) as client:
+        r = client.get("/api/v1/health")
+        assert r.status_code == 200
+        assert r.json()["status"] == "ok"
+        r2 = client.get("/api/v1/devices")
+        assert r2.status_code == 200
+        body = {
+            "name": "HTTP test device",
+            "driver_type": "stub",
+            "device_address": "0",
+            "scrape_interval_seconds": 2.0,
+            "enabled": False,
+        }
+        r3 = client.post("/api/v1/devices", json=body)
+        assert r3.status_code == 200
+        did = r3.json()["id"]
+        r4 = client.post(
+            f"/api/v1/devices/{did}/points",
+            json={"name": "p1", "object_identifier": "analog-input,1", "property_identifier": "present-value"},
+        )
+        assert r4.status_code == 200
+        r5 = client.patch(f"/api/v1/devices/{did}", json={"enabled": True, "scrape_interval_seconds": 0.35})
+        assert r5.status_code == 200
+        import time
+
+        time.sleep(0.6)
+        lv = client.get(f"/api/v1/devices/{did}/latest-values")
+        assert lv.status_code == 200
+        assert len(lv.json()) >= 1
+        hh = client.get(f"/api/v1/devices/{did}/health")
+        assert hh.status_code == 200
+        client.delete(f"/api/v1/points/{r4.json()['id']}")
+        client.delete(f"/api/v1/devices/{did}")
