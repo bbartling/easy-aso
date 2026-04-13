@@ -3,5 +3,7 @@ recursive-include tests *
 recursive-include examples *.py
 recursive-include docs *.md
 recursive-include docs Gemfile
+recursive-include scripts *.py
+recursive-include pdf .gitkeep
 global-exclude *.py[cod]
 global-exclude *.pyo

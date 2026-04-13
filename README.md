@@ -48,7 +48,7 @@ pytest tests/test_bacnet.py -v
 
 ## Documentation site
 
-Full guides (architecture, supervisor API, lifecycle patterns, BACnet integration) live in **`docs/`**. Pushes to **`main`** trigger **GitHub Actions** (`.github/workflows/pages.yml`) to build Jekyll and publish **GitHub Pages** at the link in the header above.
+Full guides live in **`docs/`**. On **`main`**, Actions match [open-fdd](https://github.com/bbartling/open-fdd/tree/master/.github/workflows): [**`docs-pages.yml`**](https://github.com/bbartling/easy-aso/blob/main/.github/workflows/docs-pages.yml) (Jekyll → Pages), [**`docs-pdf.yml`**](https://github.com/bbartling/easy-aso/blob/main/.github/workflows/docs-pdf.yml) (PDF + text bundle via PR), and [**`publish-pypi.yml`**](https://github.com/bbartling/easy-aso/blob/main/.github/workflows/publish-pypi.yml) (upload **easy-aso** to PyPI on tags `v*`). Maintainer notes: [PyPI publishing](https://bbartling.github.io/easy-aso/pypi-publishing.html).
 
 Build locally (Ruby + Bundler):
 

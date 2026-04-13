@@ -1,9 +1,15 @@
-# Build Jekyll (Just the Docs) from ./docs and publish to GitHub Pages — same pattern as open-fdd
-name: Deploy docs to Pages
+# Build Jekyll site from docs/ and deploy to GitHub Pages (project site: /easy-aso).
+# Mirrors open-fdd: https://github.com/bbartling/open-fdd/blob/master/.github/workflows/docs-pages.yml
+
+name: Docs (GitHub Pages)
 
 on:
   push:
     branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs-pages.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -11,7 +17,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: "pages-easy-aso"
   cancel-in-progress: false
 
 jobs:
@@ -20,25 +26,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
           working-directory: docs
 
-      - name: Install gems
-        working-directory: docs
-        run: bundle install
-
       - name: Build Jekyll site
         working-directory: docs
-        run: bundle exec jekyll build --verbose --trace
+        run: bundle install && bundle exec jekyll build -d "${{ github.workspace }}/_site"
+        env:
+          JEKYLL_ENV: production
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/_site
+          path: _site
 
   deploy:
     environment:
@@ -47,6 +49,5 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - id: deployment
         uses: actions/deploy-pages@v4

@@ -98,8 +98,9 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
+# Sphinx / Jekyll scratch (combined.md from PDF script lives here)
 docs/_build/
+docs/_site/
 
 # PyBuilder
 .pybuilder/

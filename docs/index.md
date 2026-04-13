@@ -28,6 +28,7 @@ Use it when you want:
 | Configure devices/points + REST API | [Supervisor workflows](SUPERVISOR_WORKFLOWS.html) |
 | See HTTP surfaces | [API surface](api-surface.html) |
 | Understand the design | [Platform driver architecture](PLATFORM_DRIVER_ARCHITECTURE.html) |
+| Ship to PyPI | [PyPI publishing](pypi-publishing.html) |
 
 ---
 

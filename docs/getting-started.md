@@ -64,4 +64,16 @@ Open `http://127.0.0.1:4000/easy-aso/`.
 
 ### Published site (GitHub Pages)
 
-In the GitHub repo, set **Settings → Pages → Build and deployment → Source: GitHub Actions**. Pushes to `main` then publish automatically via `.github/workflows/pages.yml`. Public URL: **`https://bbartling.github.io/easy-aso/`**.
+Set **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+
+Workflows (same layout as [open-fdd](https://github.com/bbartling/open-fdd/tree/master/.github/workflows)):
+
+| Workflow | What it does |
+|----------|----------------|
+| [`docs-pages.yml`](https://github.com/bbartling/easy-aso/blob/main/.github/workflows/docs-pages.yml) | Jekyll → GitHub Pages when `docs/**` changes on **`main`** |
+| [`docs-pdf.yml`](https://github.com/bbartling/easy-aso/blob/main/.github/workflows/docs-pdf.yml) | Regenerates `pdf/easy-aso-docs.pdf` + `.txt`, opens a **PR** |
+| [`publish-pypi.yml`](https://github.com/bbartling/easy-aso/blob/main/.github/workflows/publish-pypi.yml) | Publishes the **whole** package on push tags `v*` |
+
+Public site: **`https://bbartling.github.io/easy-aso/`**
+
+PyPI setup for maintainers: [PyPI publishing](pypi-publishing.html).
