@@ -1,5 +1,7 @@
 from easy_aso import EasyASO
 import asyncio
+import os
+
 import aiomqtt
 
 """
@@ -12,15 +14,20 @@ python examples/mqtt_example.py --name EasyAso --instance 99999
 run on a custom UDP port with passing in IP address of your device
 python examples/mqtt_example.py --name EasyAso --instance 99999 --address 10.200.200.223/24:47820
 
+Point at your own broker (e.g. Mosquitto on an Ubuntu server on the LAN):
+  set MQTT_BROKER=192.168.1.50
+  optional: MQTT_PORT=1883 MQTT_TOPIC=building/ahu1/discharge_air_temp
+
 """
 
 # BACnet MSTP device example
 BACNET_DEVICE_ADDR = "11:21"
 BACNET_OBJ_ID = "analog-input,1019"
 
-# MQTT settings
-BROKER_ADDRESS = "test.mosquitto.org"
-MQTT_TOPIC = "test/sensor/discharge_air_temp"
+# MQTT settings (override for local / LAN Mosquitto)
+BROKER_ADDRESS = os.environ.get("MQTT_BROKER", "test.mosquitto.org")
+MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
+MQTT_TOPIC = os.environ.get("MQTT_TOPIC", "test/sensor/discharge_air_temp")
 STEP_INTERVAL_SECONDS = 30
 
 
@@ -32,7 +39,7 @@ class CustomBot(EasyASO):
     async def on_start(self):
         print("ReadRequest on_start!")
         # Initialize MQTT client
-        self.mqtt_client = aiomqtt.Client(BROKER_ADDRESS)
+        self.mqtt_client = aiomqtt.Client(BROKER_ADDRESS, port=MQTT_PORT)
 
     async def on_step(self):
         print("Starting ReadRequest on_step...")

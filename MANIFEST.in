@@ -1,0 +1,6 @@
+# Ship integration-test and example scripts in the sdist (wheel ships `easy_aso` only).
+recursive-include tests *
+recursive-include examples *.py
+recursive-include docs *.md
+global-exclude *.py[cod]
+global-exclude *.pyo

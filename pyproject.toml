@@ -1,14 +1,41 @@
 [build-system]
-requires = ["setuptools>=69", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "easy-aso"
 version = "0.1.0"
-description = "Automated Supervisory Optimization (ASO) for BACnet systems"
+description = "Automated Supervisory Optimization (ASO) for BACnet building automation systems (BAS) and HVAC supervisory control"
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = [
+  "bacnet",
+  "bas",
+  "building-automation",
+  "bacpypes3",
+  "hvac",
+  "supervisory-control",
+  "energy",
+  "asyncio",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Office/Business",
+  "Topic :: System :: Monitoring",
+  "Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator",
+]
 
 authors = [
   { name = "Ben Bartling", email = "ben.bartling@gmail.com" },
@@ -26,8 +53,23 @@ platform = [
   "uvicorn[standard]",
   "httpx",
   "asyncio-mqtt",
+  "aiosqlite",
 ]
-test = ["pytest"]
+test = ["pytest", "pytest-asyncio"]
+# Local development / CI (platform + test, no self-referential extras)
+dev = [
+  "pytest",
+  "pytest-asyncio",
+  "fastapi",
+  "uvicorn[standard]",
+  "httpx",
+  "asyncio-mqtt",
+  "aiosqlite",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [project.urls]
 Homepage = "https://github.com/bbartling/easy-aso"
@@ -36,3 +78,4 @@ Issues = "https://github.com/bbartling/easy-aso/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["easy_aso*"]
