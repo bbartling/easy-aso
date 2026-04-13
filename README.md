@@ -1,64 +1,25 @@
 # Easy ASO
 
-**Asyncio-first supervisory layer for BACnet building automation** — think lightweight BAS orchestration at the IoT edge: one BACnet/IP core, many small agents, optional REST/JSON-RPC, and room to grow toward MQTT and optimization loops without the weight of a full platform stack.
+[![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2.svg?logo=discord&logoColor=white)](https://discord.gg/Ta48yQF8fC)
+[![CI](https://github.com/bbartling/easy-aso/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/bbartling/easy-aso/actions/workflows/ci.yml)
+![MIT License](https://img.shields.io/badge/license-MIT-green.svg)
+![Development Status](https://img.shields.io/badge/status-Beta-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.9+-blue?logo=python&logoColor=white)
+[![PyPI](https://img.shields.io/pypi/v/easy-aso?label=PyPI&logo=pypi&logoColor=white&cacheSeconds=600)](https://pypi.org/project/easy-aso/)
 
-**[Documentation](https://bbartling.github.io/easy-aso/)** · [diy-bacnet-server](https://github.com/bbartling/diy-bacnet-server) (BACnet core & discovery) · MIT License
+**Asyncio-first supervisory layer for BACnet building automation** — lightweight BAS orchestration at the IoT edge: one BACnet/IP core, small agents, optional REST/JSON-RPC, and room to grow without a full platform stack.
 
----
-
-## Why Easy ASO?
-
-- **Edge-first:** Docker Compose brings up a singleton **BACnet core** (UDP `47808`) plus independent **algorithm containers** — same idea as a slimmed-down VOLTTRON-style deployment, tuned for gateways and Raspberry Pi–class hardware.
-- **Event-driven control:** Subclass `EasyASO` and implement `on_start` → `on_step` → `on_stop` for read/write cycles, kill-switch behavior, and clean override release.
-- **Platform driver (supervisor):** SQLite-backed devices/points, asyncio polling, hot reload, and a **FastAPI** surface — inspired by a *platform driver* mental model, without pretending to be VOLTTRON. See [Supervisor workflows](https://bbartling.github.io/easy-aso/SUPERVISOR_WORKFLOWS.html).
-
----
-
-## Quick start (Docker, IoT edge)
-
-BACnet/IP and discovery (Who-Is, RPM, read/write, priority array, point discovery, etc.) are implemented by **[diy-bacnet-server](https://github.com/bbartling/diy-bacnet-server)** — this repo **vendors** it under `vendor/diy-bacnet-server/` and talks to it over **JSON-RPC** by default.
-
-```bash
-git clone https://github.com/bbartling/easy-aso.git
-cd easy-aso
-docker compose up -d --build
-```
-
-- **Swagger (BACnet core):** `http://localhost:8080/docs`  
-- Tune `BACNET_CORE_ARGS`, `DEVICE_INSTANCE`, and agent env vars in `docker-compose.yml` for your site.
-
-Agents use `BACNET_BACKEND=diy_jsonrpc` and `DIY_BACNET_URL` (see [BACnet edge](https://bbartling.github.io/easy-aso/bacnet-edge.html)).
+**[Documentation](https://bbartling.github.io/easy-aso/)** · [diy-bacnet-server](https://github.com/bbartling/diy-bacnet-server) (BACnet core)
 
 ---
 
-## Local development
+## Install from PyPI
 
 ```bash
-pip install -e ".[dev]"
-pytest tests/test_abc.py tests/test_supervisor.py -v
+pip install easy-aso
 ```
 
-Optional Docker integration test (two simulated BACnet peers):
-
-```bash
-pytest tests/test_bacnet.py -v
-```
-
----
-
-## Documentation site
-
-Full guides live in **`docs/`**. On **`master`** (same as [open-fdd workflows](https://github.com/bbartling/open-fdd/tree/master/.github/workflows)), Actions run [**`docs-pages.yml`**](https://github.com/bbartling/easy-aso/blob/master/.github/workflows/docs-pages.yml) (Jekyll → Pages — set **Settings → Pages → Source: GitHub Actions** once), [**`docs-pdf.yml`**](https://github.com/bbartling/easy-aso/blob/master/.github/workflows/docs-pdf.yml) (PDF + text bundle via PR), and tags trigger [**`publish-pypi.yml`**](https://github.com/bbartling/easy-aso/blob/master/.github/workflows/publish-pypi.yml) (Python **3.14** like [open-fdd engine publish](https://github.com/bbartling/open-fdd/blob/master/.github/workflows/publish-openfdd-engine.yml); upload **easy-aso** to PyPI on tags `v*`). Maintainer notes: [PyPI publishing](https://bbartling.github.io/easy-aso/pypi-publishing.html).
-
-Build locally (Ruby + Bundler):
-
-```bash
-cd docs
-bundle install
-bundle exec jekyll serve --livereload
-```
-
-Browse `http://127.0.0.1:4000/easy-aso/`.
+Clone workflows, Docker, tests, supervisor, and maintainer topics: **[documentation site](https://bbartling.github.io/easy-aso/)**.
 
 ---
 

@@ -22,6 +22,7 @@ Use it when you want:
 
 | I want to… | Read |
 |------------|------|
+| Understand positioning (edge, agents, supervisor) | [Why Easy ASO?](why-easy-aso.html) |
 | Run the stack on a gateway or Pi | [Getting started](getting-started.html) |
 | Point BACnet tooling at the LAN | [BACnet edge](bacnet-edge.html) |
 | Model supervisory logic as events | [Lifecycle & events](lifecycle.html) |
