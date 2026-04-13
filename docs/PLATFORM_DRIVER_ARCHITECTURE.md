@@ -1,3 +1,9 @@
+---
+layout: default
+title: Platform driver architecture
+nav_order: 60
+---
+
 # Platform driver architecture (easy-aso supervisor)
 
 This document describes where the VOLTTRON-inspired **platform driver** (dynamic devices/points, polling, config store) fits into easy-aso, and how components interact. It is intentionally smaller than a full BAS stack: **asyncio-first**, **SQLite** for configuration, **in-process** polling tasks, and **pluggable drivers** (BACnet first).

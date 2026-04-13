@@ -1,3 +1,9 @@
+---
+layout: default
+title: Supervisor workflows
+nav_order: 50
+---
+
 # Supervisor workflows
 
 The **supervisor** service (`easy_aso.supervisor.app`) provides CRUD for BACnet (or stub) devices/points, persists configuration in **SQLite**, and runs **asyncio** polling loops per enabled device.
