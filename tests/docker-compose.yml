@@ -14,7 +14,7 @@ services:
     depends_on:
       - bacnet-client
     command: >
-      /bin/bash -c "sleep 5 && ping -c 4 bacnet-client && source /app/venv/bin/activate && python3 fake_bacnet_device.py --name BensServerTest --instance 3456789"
+      /bin/bash -c "sleep 5 && ping -c 4 bacnet-client && python3 fake_bacnet_device.py --name BensServerTest --instance 3456789"
 
   bacnet-client:
     build:
@@ -28,7 +28,7 @@ services:
     stdin_open: true
     tty: true
     command: >
-      /bin/bash -c "sleep 5 && ping -c 4 bacnet-server && source /app/venv/bin/activate && python3 fake_easy_aso_inst.py"
+      /bin/bash -c "sleep 5 && ping -c 4 bacnet-server && python3 fake_easy_aso_inst.py"
 
 networks:
   bacnet-network:
