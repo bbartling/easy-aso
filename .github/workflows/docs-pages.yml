@@ -1,5 +1,6 @@
 # Build Jekyll site from docs/ and deploy to GitHub Pages (project site: /easy-aso).
-# Mirrors open-fdd: https://github.com/bbartling/open-fdd/blob/master/.github/workflows/docs-pages.yml
+# First-time setup: repo Settings → Pages → Build and deployment → Source: **GitHub Actions**.
+# open-fdd uses branch `master`; easy-aso uses `main` (see on.push).
 
 name: Docs (GitHub Pages)
 

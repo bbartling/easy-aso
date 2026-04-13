@@ -30,7 +30,7 @@ Official guide: [Trusted Publishers](https://docs.pypi.org/trusted-publishers/).
    git push origin v0.1.1
    ```
 
-3. Watch **Actions → Publish easy-aso to PyPI**. The job runs `python -m build` at the repo root and uploads **`dist/*`** for that tag.
+3. Watch **Actions → Publish easy-aso to PyPI**. The job uses **Python 3.14** (same as [open-fdd `publish-openfdd-engine.yml`](https://github.com/bbartling/open-fdd/blob/master/.github/workflows/publish-openfdd-engine.yml)), runs `python -m build` at the repo root, and uploads **`dist/*`** for that tag.
 
 `workflow_dispatch` on the same workflow can be used to **dry-run** build steps locally on CI without a tag (the **Publish to PyPI** step is skipped unless the ref is `refs/tags/v*`).
 

@@ -1,5 +1,6 @@
 # Regenerate pdf/easy-aso-docs.pdf (+ .txt) when docs or the builder change.
-# Opens a PR (same pattern as open-fdd): https://github.com/bbartling/open-fdd/blob/master/.github/workflows/docs-pdf.yml
+# Opens a PR (protected main cannot receive direct pushes from GITHUB_TOKEN).
+# Same pattern as open-fdd: https://github.com/bbartling/open-fdd/blob/master/.github/workflows/docs-pdf.yml
 
 name: Docs PDF
 

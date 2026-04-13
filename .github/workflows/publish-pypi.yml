@@ -1,7 +1,6 @@
-# Publish the **easy-aso** package (repo root pyproject.toml) to PyPI on version tags.
-# Same idea as open-fdd engine publish: https://github.com/bbartling/open-fdd/blob/master/.github/workflows/publish-openfdd-engine.yml
-#
-# Before first upload: configure **Trusted Publishing** on PyPI for this workflow.
+# PyPI project **easy-aso** (repo root `pyproject.toml`). Publishes on push tag **v***.
+# Configure Trusted Publishing on PyPI for this workflow file before first upload.
+# Same pattern as open-fdd engine publish: https://github.com/bbartling/open-fdd/blob/master/.github/workflows/publish-openfdd-engine.yml
 
 name: Publish easy-aso to PyPI
 
@@ -25,7 +24,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Build package
         run: |
