@@ -10,7 +10,7 @@
 
 - **Edge-first:** Docker Compose brings up a singleton **BACnet core** (UDP `47808`) plus independent **algorithm containers** — same idea as a slimmed-down VOLTTRON-style deployment, tuned for gateways and Raspberry Pi–class hardware.
 - **Event-driven control:** Subclass `EasyASO` and implement `on_start` → `on_step` → `on_stop` for read/write cycles, kill-switch behavior, and clean override release.
-- **Platform driver (supervisor):** SQLite-backed devices/points, asyncio polling, hot reload, and a **FastAPI** surface — inspired by a *platform driver* mental model, without pretending to be VOLTTRON. See the [Supervisor](https://bbartling.github.io/easy-aso/supervisor.html) docs.
+- **Platform driver (supervisor):** SQLite-backed devices/points, asyncio polling, hot reload, and a **FastAPI** surface — inspired by a *platform driver* mental model, without pretending to be VOLTTRON. See [Supervisor workflows](https://bbartling.github.io/easy-aso/SUPERVISOR_WORKFLOWS.html).
 
 ---
 
@@ -48,7 +48,7 @@ pytest tests/test_bacnet.py -v
 
 ## Documentation site
 
-Full guides (architecture, supervisor API, lifecycle patterns, BACnet integration) live in **`docs/`** and publish to **GitHub Pages** from `main`.
+Full guides (architecture, supervisor API, lifecycle patterns, BACnet integration) live in **`docs/`**. Pushes to **`main`** trigger **GitHub Actions** (`.github/workflows/pages.yml`) to build Jekyll and publish **GitHub Pages** at the link in the header above.
 
 Build locally (Ruby + Bundler):
 
