@@ -22,10 +22,12 @@ Use it when you want:
 
 | I want to… | Read |
 |------------|------|
+| Understand positioning (edge, agents, supervisor) | [Why Easy ASO?](why-easy-aso.html) |
 | Run the stack on a gateway or Pi | [Getting started](getting-started.html) |
 | Point BACnet tooling at the LAN | [BACnet edge](bacnet-edge.html) |
 | Model supervisory logic as events | [Lifecycle & events](lifecycle.html) |
 | Configure devices/points + REST API | [Supervisor workflows](SUPERVISOR_WORKFLOWS.html) |
+| Harden supervisor + BACnet RPC on an OT LAN | [Supervisor OT security](SUPERVISOR_OT_SECURITY.html) |
 | See HTTP surfaces | [API surface](api-surface.html) |
 | Understand the design | [Platform driver architecture](PLATFORM_DRIVER_ARCHITECTURE.html) |
 | Ship to PyPI | [PyPI publishing](pypi-publishing.html) |

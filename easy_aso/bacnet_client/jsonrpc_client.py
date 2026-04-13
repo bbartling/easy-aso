@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -17,12 +18,36 @@ class JsonRpcBacnetClient(BacnetClient):
     device instance (e.g. "3456789").
 
     Default entrypoint for fastapi-jsonrpc is `/api`.
+
+    When **diy-bacnet-server** has ``BACNET_RPC_API_KEY`` set, send the same value as
+    ``Authorization: Bearer …`` on every JSON-RPC POST. The client reads (in order)
+    ``bearer_token``, ``SUPERVISOR_BACNET_RPC_BEARER``, or ``BACNET_RPC_API_KEY`` from
+    the environment if ``bearer_token`` is ``None`` (the default).
     """
 
-    def __init__(self, base_url: str, timeout_s: float = 15.0, entrypoint: str = "/api"):
+    def __init__(
+        self,
+        base_url: str,
+        timeout_s: float = 15.0,
+        entrypoint: str = "/api",
+        *,
+        bearer_token: Optional[str] = None,
+    ):
         self.base_url = base_url.rstrip("/")
         self.entrypoint = entrypoint
-        self._client = httpx.AsyncClient(timeout=timeout_s)
+        headers: Dict[str, str] = {}
+        if bearer_token is not None:
+            raw_tok = bearer_token
+        else:
+            raw_tok = (
+                os.environ.get("SUPERVISOR_BACNET_RPC_BEARER")
+                or os.environ.get("BACNET_RPC_API_KEY")
+                or ""
+            )
+        tok = raw_tok.strip()
+        if tok:
+            headers["Authorization"] = f"Bearer {tok}"
+        self._client = httpx.AsyncClient(timeout=timeout_s, headers=headers or None)
 
     async def close(self) -> None:
         await self._client.aclose()
