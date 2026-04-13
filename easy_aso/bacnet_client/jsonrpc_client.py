@@ -22,7 +22,7 @@ class JsonRpcBacnetClient(BacnetClient):
     When **diy-bacnet-server** has ``BACNET_RPC_API_KEY`` set, send the same value as
     ``Authorization: Bearer …`` on every JSON-RPC POST. The client reads (in order)
     ``bearer_token``, ``SUPERVISOR_BACNET_RPC_BEARER``, or ``BACNET_RPC_API_KEY`` from
-    the environment if ``bearer_token`` is not passed explicitly.
+    the environment if ``bearer_token`` is ``None`` (the default).
     """
 
     def __init__(
@@ -36,12 +36,15 @@ class JsonRpcBacnetClient(BacnetClient):
         self.base_url = base_url.rstrip("/")
         self.entrypoint = entrypoint
         headers: Dict[str, str] = {}
-        tok = (
-            bearer_token
-            or os.environ.get("SUPERVISOR_BACNET_RPC_BEARER")
-            or os.environ.get("BACNET_RPC_API_KEY")
-            or ""
-        ).strip()
+        if bearer_token is not None:
+            raw_tok = bearer_token
+        else:
+            raw_tok = (
+                os.environ.get("SUPERVISOR_BACNET_RPC_BEARER")
+                or os.environ.get("BACNET_RPC_API_KEY")
+                or ""
+            )
+        tok = raw_tok.strip()
         if tok:
             headers["Authorization"] = f"Bearer {tok}"
         self._client = httpx.AsyncClient(timeout=timeout_s, headers=headers or None)
