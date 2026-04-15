@@ -22,17 +22,26 @@ Official guide: [Trusted Publishers](https://docs.pypi.org/trusted-publishers/).
 
 ## Cutting a release
 
-1. Bump `version` in `pyproject.toml` on **`master`** (open-fdd style) or your release branch, then merge.
-2. Tag a **PEP 440** version with a `v` prefix (matches the workflow filter):
+**Merging a PR to `master` does not publish to PyPI.** Only a **`git push` of a tag matching `v*`** runs the publish job (see `if: startsWith(github.ref, 'refs/tags/v')` in `publish-pypi.yml`). CI on branch pushes is separate (`ci.yml`).
+
+Typical flow:
+
+1. Open a PR from **`develop`** (or a feature branch) into **`master`** with your changes and a **`version` bump** in `pyproject.toml` (each PyPI upload must be a new version).
+2. Merge the PR so **`master`** contains the release commit.
+3. On your machine, update local **`master`** and create the tag **on that merge commit**:
 
    ```bash
-   git tag v0.1.1
-   git push origin v0.1.1
+   git checkout master
+   git pull origin master
+   git tag v0.1.6   # must match pyproject version (with leading v)
+   git push origin v0.1.6
    ```
 
-3. Watch **Actions → Publish easy-aso to PyPI**. The job uses **Python 3.14** (same as [open-fdd `publish-openfdd-engine.yml`](https://github.com/bbartling/open-fdd/blob/master/.github/workflows/publish-openfdd-engine.yml)), runs `python -m build` at the repo root, and uploads **`dist/*`** for that tag.
+   Tags pushed from **`develop`** before merging still publish whatever commit the tag points to — for a clean release, the tag should usually point at **`master`** after the merge.
 
-`workflow_dispatch` on the same workflow can be used to **dry-run** build steps locally on CI without a tag (the **Publish to PyPI** step is skipped unless the ref is `refs/tags/v*`).
+4. Watch **Actions → Publish easy-aso to PyPI**. The workflow runs **pytest** on **Python 3.11 and 3.12**, builds with **Python 3.12**, then **Trusted Publishing** uploads **`dist/*`** for that tag.
+
+`workflow_dispatch` runs the same **test** and **build** jobs; **Publish to PyPI** runs only when the workflow run was triggered by a **tag** (`refs/tags/v*`).
 
 ## If publish fails
 

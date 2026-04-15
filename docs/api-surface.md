@@ -19,6 +19,12 @@ Easy ASO exposes a few **HTTP** surfaces; pick the one that matches how you depl
 - Use when you want the *old* “gateway owns UDP” pattern with REST instead of JSON-RPC.
 - Set `BACNET_BACKEND=easy_gateway` on consumers and point them at that service.
 
+## Agent runner (`easy-aso-agent`)
+
+- Installed with the base package (`[project.scripts]` in `pyproject.toml`).
+- **`easy-aso-agent run`** loads `EASY_ASO_AGENT_MODULE` / `EASY_ASO_AGENT_CLASS` (or `--module` / `--class`) and runs the standard `EasyASO` asyncio lifecycle.
+- Use **`RpcDockedEasyASO`** (`easy_aso.runtime.rpc_docked`) when BACnet I/O should go through **`JsonRpcBacnetClient`** (no second UDP `47808` bind). See [Multi-agent (RPC-docked)](MULTI_AGENT_RPC_DOCKED.html).
+
 ## Supervisor (`easy_aso.supervisor.app`)
 
 - **FastAPI** app for **platform-style** configuration:
