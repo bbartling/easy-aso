@@ -10,8 +10,6 @@
 Easy-to-follow Automated Supervisory Optimization (ASO) event-driven logic combined with an asyncio-first supervisory layer for BACnet building automation — lightweight BAS orchestration at the IoT edge with one BACnet/IP core, small agents, optional REST/JSON-RPC, and room to grow without a full platform stack.
 
 
-**[Documentation](https://bbartling.github.io/easy-aso/)** · 
-
 ---
 
 ## Install from PyPI
@@ -20,19 +18,25 @@ Easy-to-follow Automated Supervisory Optimization (ASO) event-driven logic combi
 pip install easy-aso
 ```
 
-[documentation site](https://bbartling.github.io/easy-aso/)
-[diy-bacnet-server](https://github.com/bbartling/diy-bacnet-server) (BACnet core)
+- **Docs:** [bbartling.github.io/easy-aso](https://bbartling.github.io/easy-aso/)
+- **BACnet core:** [diy-bacnet-server](https://github.com/bbartling/diy-bacnet-server)
 
-## ASO Made Easy
+## ASO made easy
 
+Subclass **`EasyASO`** and implement **`on_start`**, **`on_step`**, and **`on_stop`** — same pattern for reads, writes, and releasing overrides:
 
 ```python
+import asyncio
+
+from easy_aso import EasyASO
+
+
 class CustomHvacAso(EasyASO):
     async def on_start(self):
-        print("Custom ASO is deploying! Lets do something!")
+        print("Custom ASO is deploying! Let's do something!")
 
     async def on_step(self):
-	    # BACnet read request
+        # BACnet read request
         sensor = await self.bacnet_read("192.168.0.122", "analog-input,1")
 
         # Custom step logic - BACnet write request
@@ -44,7 +48,7 @@ class CustomHvacAso(EasyASO):
 
     async def on_stop(self):
         # Custom stop logic - BACnet release request
-        await self.bacnet_write("192.168.0.122", "analog-output,2", 'null')
+        await self.bacnet_write("192.168.0.122", "analog-output,2", "null")
         print("Executing stop actions... The system is released back to normal!")
 ```
 

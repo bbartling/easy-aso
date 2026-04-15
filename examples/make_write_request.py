@@ -1,10 +1,9 @@
+"""BACnet write / release demo (local BACnet stack). Edit addresses and objects for your site."""
+
 import asyncio
-from easy_aso import EasyASO
 import random
 
-"""
-BACnet write request
-"""
+from easy_aso import EasyASO
 BACNET_DEVICE_ADDR = "10.200.200.233"
 FAN_CMD_OBJ_ID = "binary-output,1"
 VALVE_CMD_OBJ_ID = "analog-output,1"

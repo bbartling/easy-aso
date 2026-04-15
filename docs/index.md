@@ -31,6 +31,7 @@ Use it when you want:
 | See HTTP surfaces | [API surface](api-surface.html) |
 | Understand the design | [Platform driver architecture](PLATFORM_DRIVER_ARCHITECTURE.html) |
 | Ship to PyPI | [PyPI publishing](pypi-publishing.html) |
+| Run many agents beside one BACnet gateway | [Multi-agent (RPC-docked)](MULTI_AGENT_RPC_DOCKED.html) |
 
 ---
 

@@ -1,6 +1,9 @@
-from easy_aso import EasyASO
+"""Load-shedding demo (hard-coded BACnet targets)."""
+
 import asyncio
 import time
+
+from easy_aso import EasyASO
 
 # BACnet configuration
 POWER_MTR_BACNET_ADDR = "10.200.200.233"
