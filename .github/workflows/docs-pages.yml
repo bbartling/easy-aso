@@ -1,14 +1,13 @@
 # Build Jekyll site from docs/ and deploy to GitHub Pages (project site: /easy-aso).
 # First-time setup: repo Settings → Pages → Build and deployment → Source: **GitHub Actions**.
-# Same branch filter as open-fdd: https://github.com/bbartling/open-fdd/blob/master/.github/workflows/docs-pages.yml
+# Do not trigger on version tags: the github-pages environment often rejects tag refs
+# ("Tag vX.Y.Z is not allowed to deploy..."). Site rebuilds on pushes to master instead.
 
 name: Docs (GitHub Pages)
 
 on:
   push:
     branches: [master]
-    tags:
-      - "v*"
   workflow_dispatch:
 
 permissions:
