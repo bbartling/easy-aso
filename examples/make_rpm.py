@@ -1,10 +1,8 @@
+"""BACnet RPM (read multiple) demo (local BACnet stack)."""
+
 import asyncio
+
 from easy_aso import EasyASO
-
-
-"""
-BACnet read multiple request
-"""
 
 RPM_ADDRESS = "10.200.200.233"  # BACnet device address
 BACNET_RPM_OBJ = [

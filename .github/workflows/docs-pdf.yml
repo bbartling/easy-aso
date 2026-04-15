@@ -1,4 +1,4 @@
-# Regenerate pdf/easy-aso-docs.pdf (+ .txt) when docs or the builder change.
+# Regenerate pdf/easy-aso-docs.pdf when docs or the builder change.
 # Opens a PR (protected master cannot receive direct pushes from GITHUB_TOKEN).
 # Same pattern as open-fdd: https://github.com/bbartling/open-fdd/blob/master/.github/workflows/docs-pdf.yml
 
@@ -45,7 +45,7 @@ jobs:
       - name: Install Python deps
         run: pip install pyyaml weasyprint
 
-      - name: Build PDF and LLM text bundle
+      - name: Build PDF (LLM text → docs/_build/, gitignored)
         run: python scripts/build_docs_pdf.py --pdf-engine=weasyprint
 
       - name: Open PR with updated bundle (if changed)
@@ -57,10 +57,10 @@ jobs:
           body: |
             Automated refresh from **Docs PDF** workflow ([`.github/workflows/docs-pdf.yml`](.github/workflows/docs-pdf.yml)).
 
-            Merge when ready so `pdf/easy-aso-docs.pdf` and `pdf/easy-aso-docs.txt` stay current on `master`.
+            Merge when ready so `pdf/easy-aso-docs.pdf` stays current on `master`.
+            (Combined Markdown for LLMs is written to `docs/_build/easy-aso-docs.txt` during the build but is not committed.)
           add-paths: |
             pdf/easy-aso-docs.pdf
-            pdf/easy-aso-docs.txt
           committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           delete-branch: true

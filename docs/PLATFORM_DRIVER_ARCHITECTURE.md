@@ -15,6 +15,7 @@ This document describes where the VOLTTRON-inspired **platform driver** (dynamic
 | BACnet abstraction | `easy_aso/bacnet_client/` (`BacnetClient`, `JsonRpcBacnetClient`) | Read/write/RPM against diy-bacnet-server or direct bacpypes |
 | HTTP gateway (BACnet socket owner) | `easy_aso/gateway/app.py` | Legacy REST shim around `BacpypesClient` |
 | Agent loops | `easy_aso/agents/*.py` | Example long-running consumers using env + factory |
+| RPC-docked agents (sidecars) | `easy_aso/runtime/` (`RpcDockedEasyASO`, `easy-aso-agent` CLI) | Many `EasyASO` processes sharing one JSON-RPC BACnet gateway |
 | Core ASO lifecycle | `easy_aso/easy_aso.py` | User subclasses `EasyASO` for algorithms |
 
 The supervisor **does not replace** `EasyASO`; it **feeds** future algorithms and MQTT publishers with a **normalized point cache** and **CRUD configuration**.

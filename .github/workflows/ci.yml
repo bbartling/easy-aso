@@ -28,8 +28,8 @@ jobs:
           pip install pyyaml
           python scripts/build_docs_pdf.py --no-pdf
 
-      - name: Run unit + supervisor tests
-        run: pytest tests/test_abc.py tests/test_supervisor.py -v --tb=short
+      - name: Run unit + supervisor + runtime tests
+        run: pytest tests/test_abc.py tests/test_supervisor.py tests/test_runtime_rpc_docked.py -v --tb=short
 
       - name: Dry-run sdist/wheel
         run: |

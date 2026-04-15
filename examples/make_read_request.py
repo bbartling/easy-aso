@@ -1,17 +1,13 @@
+"""Periodic BACnet read (local bacpypes3 stack in this process).
+
+For diy-bacnet JSON-RPC instead, see ``diy_jsonrpc_example.py``.
+
+  python examples/make_read_request.py --name EasyAso --instance 99999
+  python examples/make_read_request.py --name EasyAso --instance 99999 --address 10.200.200.223/24:47820
+"""
+
 import asyncio
 from easy_aso import EasyASO
-
-
-"""
-BACnet read request example
-
-run app with custom name and custom BACnet instance ID
-python examples/make_read_request.py --name EasyAso --instance 99999
-
-run on a custom UDP port with passing in IP address of your device
-python examples/make_read_request.py --name EasyAso --instance 99999 --address 10.200.200.223/24:47820
-
-"""
 
 # BACnet MSTP device
 # Hardware address 22 MSTP trunk 12
