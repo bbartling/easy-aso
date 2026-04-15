@@ -22,7 +22,7 @@ That maps cleanly to **event-driven** thinking: each `on_step` tick is an opport
 
 ## Kill switch & safety
 
-The framework exposes an **optimization enabled** commandable binary value. `get_optimization_enabled_status()` lets you **short-circuit** optimization (release overrides, hold, or run in shadow mode) before touching field hardware.
+The framework exposes an **optimization-enabled** commandable binary value. `get_optimization_enabled_status()` lets you **short-circuit** optimization (release overrides, hold, or run in shadow mode) before touching field hardware.
 
 Pair that with **explicit `bacnet_write(..., 'null', priority)`** on stop so the BAS never inherits stale priorities.
 

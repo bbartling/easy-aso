@@ -71,7 +71,7 @@ Workflows (same layout as [open-fdd](https://github.com/bbartling/open-fdd/tree/
 | Workflow | What it does |
 |----------|----------------|
 | [`docs-pages.yml`](https://github.com/bbartling/easy-aso/blob/master/.github/workflows/docs-pages.yml) | Jekyll → GitHub Pages when `docs/**` changes on **`master`** (repo **Settings → Pages → Source: GitHub Actions**, same as [open-fdd `docs-pages.yml`](https://github.com/bbartling/open-fdd/blob/master/.github/workflows/docs-pages.yml)) |
-| [`docs-pdf.yml`](https://github.com/bbartling/easy-aso/blob/master/.github/workflows/docs-pdf.yml) | Regenerates `pdf/easy-aso-docs.pdf` + `.txt`, opens a **PR** |
+| [`docs-pdf.yml`](https://github.com/bbartling/easy-aso/blob/master/.github/workflows/docs-pdf.yml) | Regenerates `pdf/easy-aso-docs.pdf`, opens a **PR** (LLM text bundle is `docs/_build/easy-aso-docs.txt`, not tracked) |
 | [`publish-pypi.yml`](https://github.com/bbartling/easy-aso/blob/master/.github/workflows/publish-pypi.yml) | Publishes the **whole** package on push tags `v*` |
 
 Public site: **`https://bbartling.github.io/easy-aso/`**

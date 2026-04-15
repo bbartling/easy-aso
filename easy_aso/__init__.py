@@ -16,10 +16,10 @@ except PackageNotFoundError:  # pragma: no cover - editable checkout without ins
     __version__ = "0.dev0"
 
 __all__ = [
-    "EasyASO",
     "BacnetRpcConfig",
+    "EasyASO",
     "RpcDockedEasyASO",
+    "__version__",
     "load_rpc_config_from_env",
     "run_agent_class",
-    "__version__",
 ]

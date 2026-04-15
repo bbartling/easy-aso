@@ -1,69 +1,58 @@
-# Easy ASO BACnet Application
+# Examples
 
-This project allows you to create BACnet-enabled applications for Automated Supervisory Optimization (ASO). You can read BACnet properties, interact with BACnet devices, and optionally disable the BACnet server functionality based on your needs.
+Scripts here are **educational** and often use **hard-coded BACnet addresses** — copy into your own package and adapt.
 
+## Choose a pattern
 
-## Running the Application
+| Pattern | Scripts / entry points | When to use |
+|--------|-------------------------|-------------|
+| **JSON-RPC to diy-bacnet-server** | `diy_jsonrpc_example.py` | Production-style edge: one container owns UDP `47808`, agents use HTTP JSON-RPC. |
+| **RPC-docked `EasyASO` lifecycle** | `easy_aso.runtime` + `easy-aso-agent run` | Same as JSON-RPC, but full `on_start` / `on_step` / `on_stop` in a sidecar (see library docs). |
+| **Local BACnet (bacpypes3)** | `make_read_request.py`, `make_write_request.py`, `make_rpm.py`, `mqtt_example.py` | Lab or gateway that runs a BACnet stack **in this process**. |
+| **MQTT telemetry** | `mqtt_example.py` | After a BACnet read, publish to a broker. Use a **topic prefix** that does not collide with diy-bacnet’s BACnet2MQTT or MQTT-RPC topics if both share a broker. |
+| **Domain demos** | `bas_supervisory.py`, `load_shed.py` | Larger sketches; replace IPs and objects for your site. |
 
-After getting setup with the local pip install process you can run the application by specifying various arguments such as the name of the BACnet server, BACnet instance ID, and optionally the network address which arguments built into the `bacpypes3` project.
+## diy-bacnet-server + MQTT (sibling containers)
 
-### Basic Example:
+- **diy-bacnet** optional MQTT: BACnet2MQTT bridge (`MQTT_BASE_TOPIC`, …) and MQTT RPC gateway — see [diy-bacnet-server MQTT docs](https://github.com/bbartling/diy-bacnet-server) (`docs/mqtt.md` in that repo).
+- **This repo’s** `mqtt_example.py` defaults to a separate topic (`easyaso/telemetry/...`) so an easy-aso agent can live on the **same broker** without stealing bridge/RPC topic names.
+
+Environment variables `MQTT_BROKER_URL` / `MQTT_BROKER` are recognized so one `.env` can align with diy-bacnet-style settings.
+
+## Quick commands
+
+**JSON-RPC client (no local BACnet UDP):**
+
+```bash
+pip install -e ".[platform]"
+set BACNET_BACKEND=diy_jsonrpc
+set DIY_BACNET_URL=http://127.0.0.1:8080
+set DEVICE_INSTANCE=123456
+python examples/diy_jsonrpc_example.py
+```
+
+**Classic read loop (local BACnet server in app):**
 
 ```bash
 python examples/make_read_request.py --name EasyAso --instance 99999
 ```
 
-This will:
-- Create a BACnet application named `EasyAso`.
-- Assign the BACnet instance ID `99999`.
-- Begin interacting with BACnet devices.
-
-### Running with a Custom UDP Port and Address
-
-If you need to specify a custom UDP port or IP address for your device, you can pass the `--address` argument:
+**Minimal skeleton:**
 
 ```bash
-python examples/make_read_request.py --name EasyAso --instance 99999 --address 10.200.200.223/24:47820
+python examples/blank.py --name EasyAso --instance 99999
 ```
 
-This will:
-- Use the IP address `10.200.200.223/24` and UDP port `47820`.
-
-### Disabling BACnet Server Functionality
-
-"You can disable the BACnet optimization kill switch, represented by the `self.get_optimization_enabled_status()` callback in the app examples, by using the `--no-bacnet-server` flag. When this argument is passed, the app will start without creating the `binary-value,1` BACnet point for `optimization-enabled`. The app will still be discoverable as a BACnet device, but without the `optimization-enabled` BACnet point. This feature can be useful if your ASO project does not require a BACnet kill switch."
+**Read + MQTT publish:**
 
 ```bash
-python examples/make_read_request.py --name EasyAso --instance 99999 --no-bacnet-server
+pip install aiomqtt
+set MQTT_BROKER_URL=mqtt://mosquitto:1883
+set MQTT_TOPIC=easyaso/telemetry/my_sensor
+python examples/mqtt_example.py --name EasyAso --instance 99999
 ```
 
-This will:
-- Skip creating the BACnet server and the `optimization_enabled` kill switch functionality during initialization.
-  
-## Application Architecture
+## Removed / consolidated (changelog)
 
-Your application contains lifecycle methods that are invoked during the execution:
-
-- **`on_start()`**: Initializes the application and sets up any required configurations.
-- **`on_step()`**: This runs at regular intervals and includes the logic for BACnet reads or other processing.
-- **`on_stop()`**: Clean-up method to gracefully shutdown the application.
-
-### Example: VAV Box Discharge Air Temperature Read
-
-The example script reads the discharge air temperature sensor value from a BACnet MSTP device (`11:21`) or an IP device (`10.200.200.233`) by performing a BACnet read request:
-
-```bash
-python examples/make_read_request.py --name EasyAso --instance 99999
-```
-
-This will periodically read the sensor value and print it to the console.
-
----
-
-## Arguments Overview
-
-- **`--name`**: The name of the BACnet server (e.g., `EasyAso`).
-- **`--instance`**: The BACnet instance ID (e.g., `99999`).
-- **`--address`**: The network address in the format `<IP>/<Subnet>:<Port>`. This is optional if you're using a standard address.
-- **`--no-bacnet-server`**: Disables the BACnet server functionality like the optimization kill switch.
-
+- **`fastapi_example.py`** — removed (was an empty deprecation notice; use supervisor + diy-bacnet JSON-RPC).
+- **`diy_jsonrpc_quickstart.py`** — merged into **`diy_jsonrpc_example.py`** (one script, env-driven optional RPM/write).

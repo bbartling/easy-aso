@@ -6,7 +6,7 @@ from .runner import run_agent_class
 
 __all__ = [
     "BacnetRpcConfig",
-    "load_rpc_config_from_env",
     "RpcDockedEasyASO",
+    "load_rpc_config_from_env",
     "run_agent_class",
 ]

@@ -135,6 +135,7 @@ async def test_quick_agent_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None:
     bot = Quick(args=_no_server_args(), rpc_config=BacnetRpcConfig("http://h", "/api"))
     await bot.create_application()
     await bot.run_lifecycle()
+    mock_client.close.assert_awaited()
     await bot.close_rpc_dock()
 
 

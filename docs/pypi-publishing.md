@@ -33,8 +33,8 @@ Typical flow:
    ```bash
    git checkout master
    git pull origin master
-   git tag v0.1.6   # must match pyproject version (with leading v)
-   git push origin v0.1.6
+   git tag vX.Y.Z   # must match version in pyproject.toml (with leading v)
+   git push origin vX.Y.Z
    ```
 
    Tags pushed from **`develop`** before merging still publish whatever commit the tag points to — for a clean release, the tag should usually point at **`master`** after the merge.

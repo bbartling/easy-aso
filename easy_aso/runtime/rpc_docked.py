@@ -33,6 +33,14 @@ class RpcDockedEasyASO(EasyASO):
         self._rpc_config = rpc_config
 
     async def create_application(self) -> None:
+        prev = getattr(self, "_rpc", None)
+        if prev is not None:
+            try:
+                await prev.close()
+            except Exception:
+                pass
+            self._rpc = None
+
         cfg = self._rpc_config or load_rpc_config_from_env()
         self._rpc = JsonRpcBacnetClient(
             cfg.base_url,

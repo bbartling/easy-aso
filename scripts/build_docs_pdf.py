@@ -4,7 +4,9 @@ Build a single PDF from the Easy ASO docs (Just the Docs / Jekyll-style Markdown
 
 Collects all docs/*.md (respecting nav_order and parent from YAML front matter),
 strips front matter, concatenates with headings, and runs Pandoc to produce
-pdf/easy-aso-docs.pdf. Also writes pdf/easy-aso-docs.txt (same Markdown source) for LLM context.
+``pdf/easy-aso-docs.pdf``. The same concatenated Markdown is also written to
+``docs/_build/easy-aso-docs.txt`` (gitignored) for local / LLM use — it is **not**
+committed to avoid merge noise on ``master``.
 
 Adapted from open-fdd: https://github.com/bbartling/open-fdd/blob/master/scripts/build_docs_pdf.py
 """
@@ -176,10 +178,9 @@ def main() -> int:
     combined_path.write_text(combined_md, encoding="utf-8")
     print(f"Wrote {len(sorted_files)} pages to {combined_path}")
 
-    txt_output = args.output.with_suffix(".txt")
-    args.output.parent.mkdir(parents=True, exist_ok=True)
+    txt_output = BUILD_DIR / "easy-aso-docs.txt"
     txt_output.write_text(combined_md, encoding="utf-8")
-    print(f"Wrote LLM context text to {txt_output}")
+    print(f"Wrote LLM context text to {txt_output} (under gitignored docs/_build/)")
 
     if args.no_pdf:
         print("Skipping PDF (--no-pdf).")
