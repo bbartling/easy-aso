@@ -24,10 +24,33 @@ Official guide: [Trusted Publishers](https://docs.pypi.org/trusted-publishers/).
 
 **Merging a PR to `master` does not publish to PyPI.** Only a **`git push` of a tag matching `v*`** runs the publish job (see `if: startsWith(github.ref, 'refs/tags/v')` in `publish-pypi.yml`). CI on branch pushes is separate (`ci.yml`).
 
+### Order matters (read this once)
+
+PyPI publishes **whatever commit the tag points at**. A **version-only** merge (e.g. “bump `pyproject.toml`”) does **not** magically include code that still lives in a **separate open PR**.
+
+1. **Merge every PR that carries the release code** into `master` **first** (e.g. your `release/…` or feature branch).
+2. **Then** bump `version` in `pyproject.toml` (same PR as the code, or a follow-up PR — both are fine **after** the code is on `master`).
+3. **Only then** tag `master` and push the tag.
+
+If you tag after only step (2), you can ship a **new version number with old code**. **PyPI cannot be overwritten** for that version — you must publish a **newer** `version` (e.g. `0.1.7`) with the correct tree.
+
+### Before you push the tag — quick verify
+
+After `git pull origin master`, confirm the tree matches what you intend (examples below; adjust for your release):
+
+```bash
+grep ^version pyproject.toml
+test -f easy_aso/runtime/rpc_docked.py   # example: RPC-docked runtime present
+```
+
+Or: `git merge-base --is-ancestor origin/<your-release-branch> HEAD` should succeed **before** tagging.
+
+---
+
 Typical flow:
 
-1. Open a PR from **`develop`** (or a feature branch) into **`master`** with your changes and a **`version` bump** in `pyproject.toml` (each PyPI upload must be a new version).
-2. Merge the PR so **`master`** contains the release commit.
+1. Open a PR from **`develop`** (or a feature / **`release/…`** branch) into **`master`** with **all code changes** for the release. Merge it.
+2. Ensure **`pyproject.toml` `version`** on `master` matches the release you will tag (bump in another PR if needed).
 3. On your machine, update local **`master`** and create the tag **on that merge commit**:
 
    ```bash
