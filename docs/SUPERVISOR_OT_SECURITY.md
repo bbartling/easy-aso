@@ -22,7 +22,29 @@ Use a **long random** secret and the **same** value on the BACnet RPC service an
 
 Treat the supervisor REST API like **control-plane**: bind it to **localhost** or put a **reverse proxy** (TLS + operator auth) in front and **do not** publish the Uvicorn port broadly on the LAN.
 
+Optional built-in API auth:
+
+- Set **`SUPERVISOR_API_KEY`** to enforce `Authorization: Bearer <key>` on supervisor endpoints.
+- Exempt routes: **`/api/v1/health`**, **`/docs`**, **`/redoc`**, **`/openapi.json`**.
+- Swagger includes Bearer auth metadata when enabled, so **Authorize** works for try-it-out calls.
+
 For **BAS Lite** (Docker + Caddy), see the **`vibe_code_apps_8`** stack: HTTPS with **`tls internal`**, Basic Auth at the edge, and an optional **gateway header** so only the proxy can inject the shared secret the API expects.
+
+## Local bootstrap (same style as diy-bacnet-server)
+
+Generate random local secrets:
+
+```bash
+./scripts/bootstrap-secrets.sh
+set -a && . ./.env.local && set +a
+```
+
+```powershell
+.\scripts\bootstrap-secrets.ps1
+Get-Content .env.local | ForEach-Object { if ($_ -match '^(.*?)=(.*)$') { Set-Item -Path Env:\$($matches[1]) -Value $matches[2] } }
+```
+
+This writes both **`BACNET_RPC_API_KEY`** (outbound to diy JSON-RPC) and **`SUPERVISOR_API_KEY`** (inbound supervisor auth) for local parity.
 
 ## Network exposure
 

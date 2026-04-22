@@ -118,3 +118,31 @@ def test_supervisor_http_crud(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
         assert hh.status_code == 200
         client.delete(f"/api/v1/points/{r4.json()['id']}")
         client.delete(f"/api/v1/devices/{did}")
+
+
+def test_supervisor_http_bearer_auth(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SUPERVISOR_DB_PATH", str(tmp_path / "t5.sqlite"))
+    monkeypatch.setenv("SUPERVISOR_API_KEY", "secret-token")
+    from starlette.testclient import TestClient
+
+    from easy_aso.supervisor.app import create_supervisor_app
+
+    with TestClient(create_supervisor_app()) as client:
+        # exempt path
+        health = client.get("/api/v1/health")
+        assert health.status_code == 200
+
+        # protected path
+        no_auth = client.get("/api/v1/devices")
+        assert no_auth.status_code == 401
+
+        bad_auth = client.get("/api/v1/devices", headers={"Authorization": "Bearer wrong"})
+        assert bad_auth.status_code == 403
+
+        ok_auth = client.get("/api/v1/devices", headers={"Authorization": "Bearer secret-token"})
+        assert ok_auth.status_code == 200
+
+        openapi = client.get("/openapi.json")
+        assert openapi.status_code == 200
+        security_schemes = (openapi.json().get("components") or {}).get("securitySchemes") or {}
+        assert "BearerAuth" in security_schemes

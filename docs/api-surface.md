@@ -32,9 +32,10 @@ Easy ASO exposes a few **HTTP** surfaces; pick the one that matches how you depl
   - **Latest values** + **per-device health** from asyncio polling.
   - **Hot reload** of poll tasks when config changes (no full restart).
 - Default DB path: `SUPERVISOR_DB_PATH` (see [Supervisor workflows](SUPERVISOR_WORKFLOWS.html)).
+- Optional inbound Bearer auth: set `SUPERVISOR_API_KEY` and call with `Authorization: Bearer <key>` (health + docs remain open).
 
 ---
 
 ## Design cue
 
-**Operational BACnet** → diy-bacnet-server. **Application config + snapshots** → supervisor. **Control algorithms** → `EasyASO` subclasses (anywhere they can get a `BacnetClient`).
+**Operational BACnet JSON-RPC** → diy-bacnet-server. **Application config + snapshots** → supervisor REST. **Control algorithms** → `EasyASO` subclasses (anywhere they can get a `BacnetClient`).

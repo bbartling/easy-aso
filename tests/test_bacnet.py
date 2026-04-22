@@ -8,6 +8,10 @@ def _docker_available() -> bool:
     # integration test: requires docker + compose
     if shutil.which("docker") is None:
         return False
+    try:
+        subprocess.run(["docker", "info"], check=True, capture_output=True)
+    except Exception:
+        return False
     if shutil.which("docker-compose") is not None:
         return True
     try:
