@@ -18,14 +18,14 @@ When **[diy-bacnet-server](https://github.com/bbartling/diy-bacnet-server)** has
 
 Use a **long random** secret and the **same** value on the BACnet RPC service and the easy-aso process (or container) that calls it.
 
-## Supervisor HTTP API (FastAPI)
+## Supervisor HTTP API (FastAPI JSON-RPC)
 
-Treat the supervisor REST API like **control-plane**: bind it to **localhost** or put a **reverse proxy** (TLS + operator auth) in front and **do not** publish the Uvicorn port broadly on the LAN.
+Treat the supervisor JSON-RPC API like **control-plane**: bind it to **localhost** or put a **reverse proxy** (TLS + operator auth) in front and **do not** publish the Uvicorn port broadly on the LAN.
 
 Optional built-in API auth:
 
 - Set **`SUPERVISOR_API_KEY`** to enforce `Authorization: Bearer <key>` on supervisor endpoints.
-- Exempt routes: **`/api/v1/health`**, **`/docs`**, **`/redoc`**, **`/openapi.json`**.
+- Exempt routes: **`/health`**, **`/docs`**, **`/redoc`**, **`/openapi.json`**.
 - Swagger includes Bearer auth metadata when enabled, so **Authorize** works for try-it-out calls.
 
 For **BAS Lite** (Docker + Caddy), see the **`vibe_code_apps_8`** stack: HTTPS with **`tls internal`**, Basic Auth at the edge, and an optional **gateway header** so only the proxy can inject the shared secret the API expects.

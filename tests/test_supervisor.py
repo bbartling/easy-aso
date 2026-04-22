@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,22 @@ from easy_aso.supervisor.runtime.registry import SupervisorRuntime
 from easy_aso.supervisor.store.database import open_supervisor_db
 from easy_aso.supervisor.store.repository import SupervisorRepository
 from easy_aso.supervisor.store.seed import ensure_seed_data
+
+
+def _rpc_call(client, method: str, params: dict, auth_token: str | None = None):
+    payload = {
+        "jsonrpc": "2.0",
+        "id": str(uuid.uuid4()),
+        "method": method,
+        "params": params,
+    }
+    headers = {"Content-Type": "application/json"}
+    if auth_token:
+        headers["Authorization"] = f"Bearer {auth_token}"
+    r = client.post("/api", json=payload, headers=headers)
+    data = r.json()
+    assert "error" not in data, data.get("error")
+    return r, data["result"]
 
 
 @pytest.mark.asyncio
@@ -79,18 +96,19 @@ async def test_hot_reload_on_point_update(tmp_path: Path, monkeypatch: pytest.Mo
         await conn.close()
 
 
-def test_supervisor_http_crud(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_supervisor_rpc_crud(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SUPERVISOR_DB_PATH", str(tmp_path / "t4.sqlite"))
+    monkeypatch.delenv("SUPERVISOR_API_KEY", raising=False)
     from starlette.testclient import TestClient
 
     from easy_aso.supervisor.app import create_supervisor_app
 
     with TestClient(create_supervisor_app()) as client:
-        r = client.get("/api/v1/health")
+        r = client.get("/health")
         assert r.status_code == 200
         assert r.json()["status"] == "ok"
-        r2 = client.get("/api/v1/devices")
-        assert r2.status_code == 200
+        _, devices0 = _rpc_call(client, "supervisor_list_devices", {"query": {"enabled_only": False}})
+        assert isinstance(devices0, list)
         body = {
             "name": "HTTP test device",
             "driver_type": "stub",
@@ -98,29 +116,39 @@ def test_supervisor_http_crud(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
             "scrape_interval_seconds": 2.0,
             "enabled": False,
         }
-        r3 = client.post("/api/v1/devices", json=body)
-        assert r3.status_code == 200
-        did = r3.json()["id"]
-        r4 = client.post(
-            f"/api/v1/devices/{did}/points",
-            json={"name": "p1", "object_identifier": "analog-input,1", "property_identifier": "present-value"},
+        _, created_device = _rpc_call(client, "supervisor_create_device", {"payload": body})
+        did = created_device["id"]
+        _, created_point = _rpc_call(
+            client,
+            "supervisor_create_point",
+            {
+                "req": {
+                    "device_id": did,
+                    "payload": {
+                        "name": "p1",
+                        "object_identifier": "analog-input,1",
+                        "property_identifier": "present-value",
+                    },
+                }
+            },
         )
-        assert r4.status_code == 200
-        r5 = client.patch(f"/api/v1/devices/{did}", json={"enabled": True, "scrape_interval_seconds": 0.35})
-        assert r5.status_code == 200
+        _rpc_call(
+            client,
+            "supervisor_patch_device",
+            {"req": {"device_id": did, "payload": {"enabled": True, "scrape_interval_seconds": 0.35}}},
+        )
         import time
 
         time.sleep(0.6)
-        lv = client.get(f"/api/v1/devices/{did}/latest-values")
-        assert lv.status_code == 200
-        assert len(lv.json()) >= 1
-        hh = client.get(f"/api/v1/devices/{did}/health")
-        assert hh.status_code == 200
-        client.delete(f"/api/v1/points/{r4.json()['id']}")
-        client.delete(f"/api/v1/devices/{did}")
+        _, latest = _rpc_call(client, "supervisor_latest_values", {"req": {"device_id": did}})
+        assert len(latest) >= 1
+        _, hh = _rpc_call(client, "supervisor_device_health", {"req": {"device_id": did}})
+        assert hh["device_id"] == did
+        _rpc_call(client, "supervisor_delete_point", {"req": {"point_id": created_point["id"]}})
+        _rpc_call(client, "supervisor_delete_device", {"req": {"device_id": did}})
 
 
-def test_supervisor_http_bearer_auth(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_supervisor_rpc_bearer_auth(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SUPERVISOR_DB_PATH", str(tmp_path / "t5.sqlite"))
     monkeypatch.setenv("SUPERVISOR_API_KEY", "secret-token")
     from starlette.testclient import TestClient
@@ -129,20 +157,29 @@ def test_supervisor_http_bearer_auth(tmp_path: Path, monkeypatch: pytest.MonkeyP
 
     with TestClient(create_supervisor_app()) as client:
         # exempt path
-        health = client.get("/api/v1/health")
+        health = client.get("/health")
         assert health.status_code == 200
 
         # protected path
-        no_auth = client.get("/api/v1/devices")
+        no_auth = client.post(
+            "/api",
+            json={"jsonrpc": "2.0", "id": "1", "method": "supervisor_list_devices", "params": {"query": {"enabled_only": False}}},
+        )
         assert no_auth.status_code == 401
 
-        bad_auth = client.get("/api/v1/devices", headers={"Authorization": "Bearer wrong"})
+        bad_auth = client.post(
+            "/api",
+            json={"jsonrpc": "2.0", "id": "2", "method": "supervisor_list_devices", "params": {"query": {"enabled_only": False}}},
+            headers={"Authorization": "Bearer wrong"},
+        )
         assert bad_auth.status_code == 403
 
-        ok_auth = client.get("/api/v1/devices", headers={"Authorization": "Bearer secret-token"})
-        assert ok_auth.status_code == 200
+        ok_auth = _rpc_call(client, "supervisor_list_devices", {"query": {"enabled_only": False}}, auth_token="secret-token")
+        assert ok_auth[0].status_code == 200
 
         openapi = client.get("/openapi.json")
         assert openapi.status_code == 200
         security_schemes = (openapi.json().get("components") or {}).get("securitySchemes") or {}
         assert "BearerAuth" in security_schemes
+        health_path = (((openapi.json().get("paths") or {}).get("/health")) or {}).get("get") or {}
+        assert health_path.get("security") == []

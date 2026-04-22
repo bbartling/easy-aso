@@ -12,12 +12,20 @@ if command -v openssl >/dev/null 2>&1; then
   BACNET_KEY="$(openssl rand -hex 32)"
   SUPERVISOR_KEY="$(openssl rand -hex 32)"
 else
-  BACNET_KEY="$(python - <<'PY'
+  if command -v python >/dev/null 2>&1; then
+    PY_BIN="python"
+  elif command -v python3 >/dev/null 2>&1; then
+    PY_BIN="python3"
+  else
+    echo "Neither python nor python3 found."
+    exit 1
+  fi
+  BACNET_KEY="$("$PY_BIN" - <<'PY'
 import secrets
 print(secrets.token_hex(32))
 PY
 )"
-  SUPERVISOR_KEY="$(python - <<'PY'
+  SUPERVISOR_KEY="$("$PY_BIN" - <<'PY'
 import secrets
 print(secrets.token_hex(32))
 PY
@@ -29,6 +37,7 @@ cat >"$OUT_FILE" <<EOF
 BACNET_RPC_API_KEY=$BACNET_KEY
 SUPERVISOR_API_KEY=$SUPERVISOR_KEY
 EOF
+chmod 600 "$OUT_FILE"
 
 echo "Wrote $OUT_FILE with BACNET_RPC_API_KEY and SUPERVISOR_API_KEY"
 echo "Load in your shell:"

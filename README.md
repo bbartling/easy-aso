@@ -7,7 +7,7 @@
 ![Python](https://img.shields.io/badge/Python-3.9+-blue?logo=python&logoColor=white)
 [![PyPI](https://img.shields.io/pypi/v/easy-aso?label=PyPI&logo=pypi&logoColor=white&cacheSeconds=600)](https://pypi.org/project/easy-aso/)
 
-Easy-to-follow Automated Supervisory Optimization (ASO) event-driven logic combined with an asyncio-first supervisory layer for BACnet building automation — lightweight BAS orchestration at the IoT edge with one BACnet/IP core, small agents, optional REST/JSON-RPC, and room to grow without a full platform stack. 
+Easy-to-follow Automated Supervisory Optimization (ASO) event-driven logic combined with an asyncio-first supervisory layer for BACnet building automation — lightweight BAS orchestration at the IoT edge with one BACnet/IP core, small agents, JSON-RPC, and room to grow without a full platform stack. 
 
 
 ---
@@ -38,7 +38,7 @@ This application is part of a broader ecosystem that together forms the **Open F
 
 * ⚙️ **easy-aso Framework**
   Lightweight framework for Automated Supervisory Optimization (ASO) algorithms at the IoT edge.
-  [Documentation](https://bbartling.github.io/easy-aso/) · [GitHub](https://github.com/bbartling/easy-aso) · [PyPI](https://pypi.org/project/easy-aso/0.1.7/)
+  [Documentation](https://bbartling.github.io/easy-aso/) · [GitHub](https://github.com/bbartling/easy-aso) · [PyPI](https://pypi.org/project/easy-aso/)
 
 
 ---

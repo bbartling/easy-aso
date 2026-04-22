@@ -2,8 +2,8 @@
 
 Scripts here are **educational** and often use **hard-coded BACnet addresses** — copy into your own package and adapt.
 
-> ALSO be sure to check out this other project for more real life advanced examples
-* https://github.com/bbartling/py-bacnet-stacks-playground
+> ALSO be sure to check out this other project for more real-life advanced examples
+> * https://github.com/bbartling/py-bacnet-stacks-playground
 
 ## Choose a pattern
 

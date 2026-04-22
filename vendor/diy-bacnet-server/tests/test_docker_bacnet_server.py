@@ -1,6 +1,7 @@
 import subprocess
 import time
 import os
+import shutil
 import pytest
 
 COMPOSE_FILE = os.path.join(os.path.dirname(__file__), "docker-compose.yml")
@@ -54,6 +55,13 @@ def run_docker_compose():
 
     # DYNAMICALLY GET THE COMMAND HERE
     compose_cmd = get_compose_command()
+    compose_exe = compose_cmd[0]
+    if shutil.which(compose_exe) is None:
+        pytest.skip(f"integration test requires '{compose_exe}' executable")
+    try:
+        subprocess.run([compose_exe, "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pytest.skip(f"integration test requires working '{compose_exe}' command")
 
     # Build the full command: ['docker', 'compose', '-f', ...] or ['docker-compose', '-f', ...]
     up_cmd = compose_cmd + ["-f", COMPOSE_FILE, "up", "-d"]

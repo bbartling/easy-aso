@@ -13,7 +13,7 @@ from starlette.types import ASGIApp
 
 def supervisor_auth_path_exempt(path: str) -> bool:
     """Return True for routes that stay reachable without auth."""
-    if path in ("/api/v1/health", "/docs", "/redoc", "/openapi.json"):
+    if path in ("/health", "/docs", "/redoc", "/openapi.json"):
         return True
     if path.startswith("/docs/") or path.startswith("/redoc/"):
         return True
@@ -59,19 +59,25 @@ def install_openapi_bearer_for_swagger(app) -> None:
             tags=getattr(app, "openapi_tags", None),
             servers=getattr(app, "servers", None),
         )
-        schema["components"] = schema.get("components") or {}
-        schema["components"]["securitySchemes"] = {
-            "BearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "API Key",
-                "description": (
-                    "When SUPERVISOR_API_KEY is set, send "
-                    "`Authorization: Bearer <key>` to call protected routes."
-                ),
+        schema.setdefault("components", {}).setdefault("securitySchemes", {}).update(
+            {
+                "BearerAuth": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "API Key",
+                    "description": (
+                        "When SUPERVISOR_API_KEY is set, send "
+                        "`Authorization: Bearer <key>` to call protected routes."
+                    ),
+                }
             }
-        }
+        )
         schema["security"] = [{"BearerAuth": []}]
+        for path, path_item in (schema.get("paths") or {}).items():
+            if supervisor_auth_path_exempt(path):
+                for op in path_item.values():
+                    if isinstance(op, dict):
+                        op["security"] = []
         app.openapi_schema = schema
         return app.openapi_schema
 
