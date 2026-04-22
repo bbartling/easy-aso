@@ -27,14 +27,16 @@ Easy ASO exposes a few **HTTP** surfaces; pick the one that matches how you depl
 
 ## Supervisor (`easy_aso.supervisor.app`)
 
-- **FastAPI** app for **platform-style** configuration:
+- **FastAPI JSON-RPC** app for **platform-style** configuration:
   - CRUD **devices** and **points** (SQLite).
   - **Latest values** + **per-device health** from asyncio polling.
   - **Hot reload** of poll tasks when config changes (no full restart).
+- JSON-RPC entrypoint: `POST /api`.
 - Default DB path: `SUPERVISOR_DB_PATH` (see [Supervisor workflows](SUPERVISOR_WORKFLOWS.html)).
+- Optional inbound Bearer auth: set `SUPERVISOR_API_KEY` and call with `Authorization: Bearer <key>`; unauthenticated endpoints remain `/health`, `/docs`, `/redoc`, and `/openapi.json`.
 
 ---
 
 ## Design cue
 
-**Operational BACnet** → diy-bacnet-server. **Application config + snapshots** → supervisor. **Control algorithms** → `EasyASO` subclasses (anywhere they can get a `BacnetClient`).
+**Operational BACnet JSON-RPC** → diy-bacnet-server. **Application config + snapshots** → supervisor JSON-RPC. **Control algorithms** → `EasyASO` subclasses (anywhere they can get a `BacnetClient`).

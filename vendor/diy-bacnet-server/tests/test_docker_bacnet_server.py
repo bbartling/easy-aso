@@ -1,9 +1,11 @@
 import subprocess
 import time
 import os
+import shutil
 import pytest
 
 COMPOSE_FILE = os.path.join(os.path.dirname(__file__), "docker-compose.yml")
+COMPOSE_CWD = os.path.dirname(COMPOSE_FILE)
 SERVICE_NAME = "diy-bacnet-server-test"
 
 
@@ -30,12 +32,36 @@ def get_compose_command():
     return ["docker-compose"]
 
 
+def _docker_daemon_available() -> bool:
+    try:
+        subprocess.run(
+            ["docker", "info"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+
 @pytest.fixture(scope="module")
 def run_docker_compose():
     """Start the BACnet server container for the duration of the test module."""
-    
+    if os.environ.get("RUN_VENDOR_DOCKER_TESTS", "").strip().lower() not in {"1", "true", "yes"}:
+        pytest.skip("set RUN_VENDOR_DOCKER_TESTS=1 to run vendored docker integration tests")
+    if not _docker_daemon_available():
+        pytest.skip("integration test requires a running Docker daemon")
+
     # DYNAMICALLY GET THE COMMAND HERE
     compose_cmd = get_compose_command()
+    compose_exe = compose_cmd[0]
+    if shutil.which(compose_exe) is None:
+        pytest.skip(f"integration test requires '{compose_exe}' executable")
+    try:
+        subprocess.run([compose_exe, "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pytest.skip(f"integration test requires working '{compose_exe}' command")
 
     # Build the full command: ['docker', 'compose', '-f', ...] or ['docker-compose', '-f', ...]
     up_cmd = compose_cmd + ["-f", COMPOSE_FILE, "up", "-d"]
@@ -43,7 +69,7 @@ def run_docker_compose():
 
     print(f"[Test Setup] Running command: {' '.join(up_cmd)}")
 
-    subprocess.run(up_cmd, check=True)
+    subprocess.run(up_cmd, check=True, cwd=COMPOSE_CWD)
 
     # give container some time to start BACnet stack and JSON-RPC API
     print("[Test Setup] Waiting 15s for BACnet stack boot...")
@@ -52,7 +78,7 @@ def run_docker_compose():
     yield
 
     print(f"[Test Teardown] Running command: {' '.join(down_cmd)}")
-    subprocess.run(down_cmd, check=True)
+    subprocess.run(down_cmd, check=True, cwd=COMPOSE_CWD)
 
 
 def _get_container_logs(name: str) -> str:

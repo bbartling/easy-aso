@@ -1,4 +1,3 @@
-version: '3'
 services:
   bacnet-server:
     build:
@@ -18,7 +17,7 @@ services:
       # Optional override for CSV path
       HVAC_SERVER_POINTS_CSV: /app/hvac_server_points.csv
     command: >
-      python3 -u bacpypes_server/main.py
+      python3 -u -m bacpypes_server.main
         --name TestServer
         --instance 987654
         --public

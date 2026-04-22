@@ -6,14 +6,20 @@ import pytest
 
 def _docker_available() -> bool:
     # integration test: requires docker + compose
-    if shutil.which("docker") is None:
+    docker_path = shutil.which("docker")
+    if docker_path is None:
         return False
-    if shutil.which("docker-compose") is not None:
+    try:
+        subprocess.run([docker_path, "info"], check=True, capture_output=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+    docker_compose_path = shutil.which("docker-compose")
+    if docker_compose_path is not None:
         return True
     try:
-        subprocess.run(["docker", "compose", "version"], check=True, capture_output=True)
+        subprocess.run([docker_path, "compose", "version"], check=True, capture_output=True)
         return True
-    except Exception:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         return False
 
 
@@ -22,10 +28,12 @@ def run_docker_compose():
     if not _docker_available():
         pytest.skip("integration test requires docker + docker compose")
     # Prefer compose v2, fall back to docker-compose
-    if shutil.which("docker-compose") is not None:
-        cmd = ["docker-compose", "-f", "tests/docker-compose.yml"]
+    docker_compose_path = shutil.which("docker-compose")
+    if docker_compose_path is not None:
+        cmd = [docker_compose_path, "-f", "tests/docker-compose.yml"]
     else:
-        cmd = ["docker", "compose", "-f", "tests/docker-compose.yml"]
+        docker_path = shutil.which("docker")
+        cmd = [docker_path, "compose", "-f", "tests/docker-compose.yml"]
     subprocess.run(cmd + ["up", "-d"], check=True)
     time.sleep(10)
     yield
