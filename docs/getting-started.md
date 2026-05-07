@@ -45,10 +45,12 @@ pytest tests/test_bacnet.py -v
 ```bash
 pip install -e ".[platform]"
 export SUPERVISOR_DB_PATH=./data/supervisor.sqlite
-uvicorn easy_aso.supervisor.app:app --host 0.0.0.0 --port 8090
+easy-aso-supervisor --host 0.0.0.0 --port 18090
 ```
 
-Open `http://127.0.0.1:8090/docs` for CRUD on devices/points and latest polled values. Details: [Supervisor workflows](SUPERVISOR_WORKFLOWS.html).
+Open `http://127.0.0.1:18090/docs` for CRUD on devices/points and latest polled values. Details: [Supervisor workflows](SUPERVISOR_WORKFLOWS.html).
+
+Tip for Open-FDD co-hosting: Open-FDD MCP RAG defaults to `8090`, so `18090` avoids port conflicts.
 
 ---
 

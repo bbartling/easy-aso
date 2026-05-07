@@ -101,7 +101,7 @@ Publishers subscribe to an internal **async callback queue** or poll latest valu
 | 3 | `easy_aso/supervisor/runtime/` — `SupervisorRuntime`, per-device tasks, health, graceful cancel |
 | 4 | `easy_aso/supervisor/drivers/` — `BaseDriver`, `StubDriver`, `BacnetJsonRpcDriver` (JSON-RPC RPM) |
 | 5 | `easy_aso/supervisor/coordinator.py` — CRUD hooks calling `reload_device` with structured logging |
-| 6 | `easy_aso/supervisor/api/` + `app.py` — FastAPI CRUD, latest values, health (`/api/v1/...`) |
+| 6 | `easy_aso/supervisor/rpc_methods.py` + `app.py` — FastAPI JSON-RPC supervisor methods (`/api`) + health (`/health`) |
 | 7 | `tests/test_supervisor.py`, `docs/SUPERVISOR_WORKFLOWS.md`, pytest-asyncio config |
 
 Entry point: **`uvicorn easy_aso.supervisor.app:app`**
