@@ -3,30 +3,21 @@ from __future__ import annotations
 from typing import Any, List
 
 import fastapi_jsonrpc as jsonrpc
+from fastapi_jsonrpc import BaseError
 from pydantic import BaseModel
 
 from easy_aso.supervisor.api import schemas
 from easy_aso.supervisor.coordinator import SupervisorCoordinator
 from easy_aso.supervisor.runtime.registry import DeviceHealth
 
-_APP = None
+class DeviceNotFound(BaseError):
+    CODE = 4000
+    MESSAGE = "Device not found"
 
 
-def set_supervisor_rpc_app(app) -> None:
-    global _APP
-    _APP = app
-
-
-def _coord() -> SupervisorCoordinator:
-    if _APP is None:
-        raise RuntimeError("supervisor rpc app is not initialized")
-    return _APP.state.coordinator
-
-
-def _runtime():
-    if _APP is None:
-        raise RuntimeError("supervisor rpc app is not initialized")
-    return _APP.state.runtime
+class PointNotFound(BaseError):
+    CODE = 4001
+    MESSAGE = "Point not found"
 
 
 def _device_to_dict(d: Any) -> dict:
@@ -104,8 +95,14 @@ class PointDeleteReq(BaseModel):
     point_id: str
 
 
-def create_supervisor_rpc_entrypoint() -> jsonrpc.Entrypoint:
+def create_supervisor_rpc_entrypoint(app) -> jsonrpc.Entrypoint:
     rpc = jsonrpc.Entrypoint("/api")
+
+    def _coord() -> SupervisorCoordinator:
+        return app.state.coordinator
+
+    def _runtime():
+        return app.state.runtime
 
     @rpc.method()
     def server_hello() -> dict:
@@ -125,7 +122,7 @@ def create_supervisor_rpc_entrypoint() -> jsonrpc.Entrypoint:
     async def supervisor_get_device(req: DeviceGet) -> dict:
         d = await _coord().get_device(req.device_id)
         if d is None:
-            raise ValueError("device not found")
+            raise DeviceNotFound()
         return _device_to_dict(d)
 
     @rpc.method()
@@ -134,31 +131,31 @@ def create_supervisor_rpc_entrypoint() -> jsonrpc.Entrypoint:
         if not payload:
             d = await _coord().get_device(req.device_id)
             if d is None:
-                raise ValueError("device not found")
+                raise DeviceNotFound()
             return _device_to_dict(d)
         d = await _coord().update_device_fields(req.device_id, payload)
         if d is None:
-            raise ValueError("device not found")
+            raise DeviceNotFound()
         return _device_to_dict(d)
 
     @rpc.method()
     async def supervisor_delete_device(req: DeviceDelete) -> dict:
         ok = await _coord().delete_device(req.device_id)
         if not ok:
-            raise ValueError("device not found")
+            raise DeviceNotFound()
         return {"deleted": True, "id": req.device_id}
 
     @rpc.method()
     async def supervisor_list_points(query: PointListQuery) -> List[dict]:
         if await _coord().get_device(query.device_id) is None:
-            raise ValueError("device not found")
+            raise DeviceNotFound()
         pts = await _coord().list_points(query.device_id, enabled_only=query.enabled_only)
         return [_point_to_dict(p) for p in pts]
 
     @rpc.method()
     async def supervisor_create_point(req: PointCreateReq) -> dict:
         if await _coord().get_device(req.device_id) is None:
-            raise ValueError("device not found")
+            raise DeviceNotFound()
         p = await _coord().create_point(req.device_id, **req.payload.model_dump())
         return _point_to_dict(p)
 
@@ -168,18 +165,18 @@ def create_supervisor_rpc_entrypoint() -> jsonrpc.Entrypoint:
         if not payload:
             p = await _coord().get_point(req.point_id)
             if p is None:
-                raise ValueError("point not found")
+                raise PointNotFound()
             return _point_to_dict(p)
         p = await _coord().update_point_fields(req.point_id, payload)
         if p is None:
-            raise ValueError("point not found")
+            raise PointNotFound()
         return _point_to_dict(p)
 
     @rpc.method()
     async def supervisor_delete_point(req: PointDeleteReq) -> dict:
         ok = await _coord().delete_point(req.point_id)
         if not ok:
-            raise ValueError("point not found")
+            raise PointNotFound()
         return {"deleted": True, "id": req.point_id}
 
     @rpc.method()
@@ -188,7 +185,7 @@ def create_supervisor_rpc_entrypoint() -> jsonrpc.Entrypoint:
         if h is None:
             d = await _coord().get_device(req.device_id)
             if d is None:
-                raise ValueError("device not found")
+                raise DeviceNotFound()
             return schemas.DeviceHealthOut(device_id=req.device_id, status="idle", last_poll_at=None, last_error=None)
         return schemas.DeviceHealthOut(
             device_id=h.device_id,
@@ -200,7 +197,7 @@ def create_supervisor_rpc_entrypoint() -> jsonrpc.Entrypoint:
     @rpc.method()
     async def supervisor_latest_values(req: DeviceById) -> List[schemas.PointLatestOut]:
         if await _coord().get_device(req.device_id) is None:
-            raise ValueError("device not found")
+            raise DeviceNotFound()
         pts = await _coord().list_points(req.device_id, enabled_only=False)
         out: List[schemas.PointLatestOut] = []
         for p in pts:
@@ -223,7 +220,7 @@ def create_supervisor_rpc_entrypoint() -> jsonrpc.Entrypoint:
     async def supervisor_point_latest(req: PointById) -> schemas.PointLatestOut:
         p = await _coord().get_point(req.point_id)
         if p is None:
-            raise ValueError("point not found")
+            raise PointNotFound()
         return schemas.PointLatestOut(
             point_id=p.id,
             device_id=p.device_id,

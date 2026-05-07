@@ -32,6 +32,7 @@ Easy ASO exposes a few **HTTP** surfaces; pick the one that matches how you depl
   - **Latest values** + **per-device health** from asyncio polling.
   - **Hot reload** of poll tasks when config changes (no full restart).
 - JSON-RPC entrypoint: `POST /api`.
+- Recommended launcher: `easy-aso-supervisor` (defaults to port `18090` via `SUPERVISOR_PORT` env).
 - Default DB path: `SUPERVISOR_DB_PATH` (see [Supervisor workflows](SUPERVISOR_WORKFLOWS.html)).
 - Optional inbound Bearer auth: set `SUPERVISOR_API_KEY` and call with `Authorization: Bearer <key>`; unauthenticated endpoints remain `/health`, `/docs`, `/redoc`, and `/openapi.json`.
 

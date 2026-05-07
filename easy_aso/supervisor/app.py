@@ -10,7 +10,7 @@ from fastapi import FastAPI
 
 from easy_aso.supervisor.auth import install_supervisor_auth_if_configured
 from easy_aso.supervisor.coordinator import SupervisorCoordinator
-from easy_aso.supervisor.rpc_methods import create_supervisor_rpc_entrypoint, set_supervisor_rpc_app
+from easy_aso.supervisor.rpc_methods import create_supervisor_rpc_entrypoint
 from easy_aso.supervisor.runtime.registry import SupervisorRuntime
 from easy_aso.supervisor.store.database import open_supervisor_db
 from easy_aso.supervisor.store.repository import SupervisorRepository
@@ -41,13 +41,13 @@ async def _lifespan(app: FastAPI | jsonrpc.API) -> AsyncIterator[None]:
 
 def create_supervisor_app() -> jsonrpc.API:
     app = jsonrpc.API(title="easy-aso supervisor", version="0.3.0", lifespan=_lifespan)
-    app.bind_entrypoint(create_supervisor_rpc_entrypoint())
-    set_supervisor_rpc_app(app)
+    app.bind_entrypoint(create_supervisor_rpc_entrypoint(app))
 
     @app.get("/health")
     async def health() -> dict:
         rt = app.state.runtime
-        return {"status": "ok", "running_devices": len(rt.health_snapshot())}
+        running = sum(1 for d in rt.health_snapshot() if d.status == "running")
+        return {"status": "ok", "running_devices": running}
 
     enabled = install_supervisor_auth_if_configured(app)
     if enabled:

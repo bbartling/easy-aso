@@ -13,11 +13,13 @@ The **supervisor** service (`easy_aso.supervisor.app`) provides CRUD for BACnet 
 ```bash
 pip install -e ".[platform]"
 export SUPERVISOR_DB_PATH=./data/supervisor.sqlite
-uvicorn easy_aso.supervisor.app:app --host 0.0.0.0 --port 8090
+easy-aso-supervisor --host 0.0.0.0 --port 18090
 ```
 
-- Open `http://127.0.0.1:8090/docs` for interactive API.
+- Open `http://127.0.0.1:18090/docs` for interactive API.
 - On first start, **seed data** creates a disabled example device (`seed-example-vav`) with two points.
+
+If you run this beside Open-FDD, prefer `18090` because Open-FDD MCP RAG often uses `8090`.
 
 ## BACnet (diy-bacnet-server)
 

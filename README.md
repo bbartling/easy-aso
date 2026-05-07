@@ -95,6 +95,13 @@ Then run your stack with:
 - `BACNET_RPC_API_KEY` for outbound calls to diy-bacnet-server JSON-RPC
 - `SUPERVISOR_API_KEY` for optional inbound auth on `easy_aso.supervisor.app`
 
+Optional supervisor (Open-FDD-friendly default port):
+
+```bash
+pip install "easy-aso[platform]"
+easy-aso-supervisor --host 0.0.0.0 --port 18090
+```
+
 ---
 
 ## License

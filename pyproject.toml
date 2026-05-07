@@ -79,6 +79,7 @@ Issues = "https://github.com/bbartling/easy-aso/issues"
 
 [project.scripts]
 easy-aso-agent = "easy_aso.cli.agent_main:main"
+easy-aso-supervisor = "easy_aso.cli.supervisor_main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

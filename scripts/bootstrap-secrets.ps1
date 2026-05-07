@@ -5,8 +5,19 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if (Test-Path -LiteralPath $OutFile) {
-    throw "Refusing to overwrite existing file: $OutFile"
+$resolvedOutFile = Resolve-Path -LiteralPath $OutFile -ErrorAction SilentlyContinue
+if ($null -eq $resolvedOutFile) {
+    if ([System.IO.Path]::IsPathRooted($OutFile)) {
+        $resolvedOutFile = $OutFile
+    } else {
+        $resolvedOutFile = Join-Path (Get-Location) $OutFile
+    }
+} else {
+    $resolvedOutFile = $resolvedOutFile.Path
+}
+
+if (Test-Path -LiteralPath $resolvedOutFile) {
+    throw "Refusing to overwrite existing file: $resolvedOutFile"
 }
 
 function New-HexToken([int]$bytes = 32) {
@@ -23,8 +34,8 @@ $content = @"
 BACNET_RPC_API_KEY=$bacnetKey
 SUPERVISOR_API_KEY=$supervisorKey
 "@
-[System.IO.File]::WriteAllText($OutFile, $content, (New-Object System.Text.UTF8Encoding $false))
+[System.IO.File]::WriteAllText($resolvedOutFile, $content, (New-Object System.Text.UTF8Encoding $false))
 
-Write-Host "Wrote $OutFile with BACNET_RPC_API_KEY and SUPERVISOR_API_KEY"
+Write-Host "Wrote $resolvedOutFile with BACNET_RPC_API_KEY and SUPERVISOR_API_KEY"
 Write-Host "Load into current shell:"
-Write-Host "  Get-Content $OutFile | ForEach-Object { if (`$_ -match '^(.*?)=(.*)$') { Set-Item -Path Env:\$(`$matches[1]) -Value `$matches[2] } }"
+Write-Host "  Get-Content $resolvedOutFile | ForEach-Object { if (`$_ -match '^(.*?)=(.*)$') { Set-Item -Path Env:\$(`$matches[1]) -Value `$matches[2] } }"
