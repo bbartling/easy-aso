@@ -7,7 +7,7 @@ name = "easy-aso"
 version = "0.1.7"
 description = "Automated Supervisory Optimization (ASO) for BACnet building automation systems (BAS) and HVAC supervisory control"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 keywords = [
@@ -26,7 +26,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",

@@ -22,7 +22,12 @@ if (Test-Path -LiteralPath $resolvedOutFile) {
 
 function New-HexToken([int]$bytes = 32) {
     $data = New-Object byte[] $bytes
-    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($data)
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try {
+        $rng.GetBytes($data)
+    } finally {
+        $rng.Dispose()
+    }
     return ($data | ForEach-Object { $_.ToString("x2") }) -join ""
 }
 

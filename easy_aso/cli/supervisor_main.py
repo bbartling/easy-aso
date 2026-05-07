@@ -3,18 +3,27 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import sys
 
 
 def main(argv: list[str] | None = None) -> None:
     argv = argv if argv is not None else sys.argv[1:]
-    default_port = int(os.environ.get("SUPERVISOR_PORT", "18090"))
+    env_port = os.environ.get("SUPERVISOR_PORT", "18090")
+    try:
+        default_port = int(env_port)
+    except ValueError:
+        logging.warning(
+            "Invalid SUPERVISOR_PORT=%r; falling back to default_port=18090.",
+            env_port,
+        )
+        default_port = 18090
     parser = argparse.ArgumentParser(
         prog="easy-aso-supervisor",
         description="Run easy-aso supervisor JSON-RPC API.",
     )
-    parser.add_argument("--host", default=os.environ.get("SUPERVISOR_HOST", "0.0.0.0"))
+    parser.add_argument("--host", default=os.environ.get("SUPERVISOR_HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=default_port)
     parser.add_argument("--reload", action="store_true", help="Enable uvicorn autoreload.")
     parser.add_argument(
